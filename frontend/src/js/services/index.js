@@ -25,6 +25,9 @@ servicesModule.service('Tags', TagsService);
 import ContactService from './contact.service';
 servicesModule.service('Contact', ContactService);
 
+import ProjectsService from './projects.service';
+servicesModule.service('Projects', ProjectsService)
+
 import ToastrService from './toastr.service';
 servicesModule.service('Toastr', ToastrService);
 

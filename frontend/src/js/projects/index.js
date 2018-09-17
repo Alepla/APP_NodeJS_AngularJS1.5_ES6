@@ -8,4 +8,7 @@ projectsModule.config(ProjectsConfig);
 import ProjectsCtrl from './projects.controller';
 projectsModule.controller('ProjectsCtrl', ProjectsCtrl);
 
+import CreateprojCtrl from './createproj.controller';
+projectsModule.controller('CreateprojCtrl', CreateprojCtrl);
+
 export default projectsModule;

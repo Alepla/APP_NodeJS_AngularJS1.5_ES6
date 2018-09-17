@@ -1,2 +1,11 @@
 <h1>Todos los projectos</h1>
 
+<button class="btn btn-primary btn-lg" ui-sref="app.createproj">Create project</button>
+<div style="text-align:center;">
+    <div ng-repeat="proj in infoProj" style="width:48%; display:inline-block; margin:1%;">
+        <span>Name: {{proj.name}}</span><br />
+        <span>Goal: {{proj.goal}}</span><br />
+        <span>Description: {{proj.description}}</span><br />
+        <span>Owner: {{proj.owner}}</span>
+    </div>
+</div>

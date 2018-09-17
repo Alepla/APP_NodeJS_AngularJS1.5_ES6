@@ -1,0 +1,119 @@
+<div class="container" style="margin-top: 75px; background-color: #cfcfcf; border-radius: 10px;">
+	<div class="row">
+      <div class="col-md-6 col-md-offset-3">
+        <div class="well well-sm">
+          <form class="form-horizontal" id="createprojForm" name="createprojForm">
+          <fieldset>
+            <legend class="text-center">Create Projects</legend>
+    
+            <!-- Name input -->
+            <div class="form-group">
+                <label class="col-md-3 control-label" for="name" style="max-width: 35%;">Name Project</label>
+                <div class="col-md-9">
+                    <input required ng-model="createproj.inputNameproj" id="inputNameproj" name="inputNameproj" type="text" placeholder="Your name" class="form-control" ng-minlength="3" ng-maxlength="20" ng-model-options="{  debounce: 500 }">
+                    <span ng-show="createprojForm.inputNameproj.$error.required && (createprojForm.inputNameproj.$dirty || createprojForm.inputNameproj.$touched)">Enter a name</span>
+                    <span ng-show="createprojForm.inputNameproj.$error.minlength || createprojForm.inputNameproj.$error.maxlength && (createprojForm.inputNameproj.$dirty || createprojForm.inputNameproj.$touched)">Enter between 3 and 20 characters</span>
+                </div>
+            </div>
+
+            <!-- CompanyName input -->
+            <div class="form-group">
+                <label class="col-md-3 control-label" for="name" style="max-width: 35%;">Company(person)</label>
+                <div class="col-md-9">
+                    <input required ng-model="createproj.inputCompany" id="inputCompany" name="inputCompany" type="text" placeholder="Your company name" class="form-control" ng-minlength="3" ng-maxlength="20" ng-model-options="{  debounce: 500 }">
+                    <span ng-show="createprojForm.inputCompany.$error.required && (createprojForm.inputCompany.$dirty || createprojForm.inputCompany.$touched)">Enter a company</span>
+                    <span ng-show="createprojForm.inputCompany.$error.minlength || createprojForm.inputCompany.$error.maxlength && (createprojForm.inputCompany.$dirty || createprojForm.inputCompany.$touched)">Enter between 3 and 20 characters</span>
+                </div>
+            </div>
+
+            <!-- Money Goal input -->
+            <div class="form-group">
+                <label class="col-md-3 control-label" for="name" style="max-width: 35%;">Money Goal</label>
+                <div class="col-md-9">
+                    <input required ng-model="createproj.inputGoal" id="inputGoal" name="inputGoal" type="number" placeholder="Your money goal" class="form-control" min="100" max="500000" ng-model-options="{  debounce: 500 }">
+                    <span ng-show="createprojForm.inputGoal.$error.required && (createprojForm.inputGoal.$dirty || createprojForm.inputGoal.$touched)">Enter a money goal</span>
+                    <span ng-show="createprojForm.inputGoal.$error.min || createprojForm.inputGoal.$error.max && (createprojForm.inputGoal.$dirty || createprojForm.inputGoal.$touched)">Enter between 100 and 500000 euros</span>
+                </div>
+            </div>
+
+          <!-- Sector select -->
+          <div class="form-group">
+            <label class="col-md-3 control-label" for="subject" style="max-width: 35%;">Your Sector</label>
+            <div class="col-md-9">
+                <select class="form-control" ng-options="selectSector as selectSector for selectSector in selectSector track by selectSector" ng-model="createproj.selectSector" name="selectSector">
+                  <option ng-show="showSector" value="" selected>-- Select your sector --</option>
+                </select>
+            </div>
+          </div>
+
+            <!-- Description body -->
+            <div class="form-group">
+              <label class="col-md-3 control-label" for="message" style="max-width: 50%;">Project Description</label>
+              <div class="col-md-9">
+                <textarea style="resize: none;" required ng-model="createproj.inputDesc" name="inputDesc" class="form-control" rows="4" cols="50" id="inputDesc" ng-minlength="100" ng-maxlength="10000" ng-model-options="{  debounce: 500 }" placeholder="Please enter your message here..."></textarea>
+                <span ng-show="createprojForm.inputDesc.$error.required && (createprojForm.inputDesc.$dirty || createprojForm.inputDesc.$touched)">Enter a description</span>
+                <span ng-show="createprojForm.inputDesc.$error.minlength">Enter more than 100 characters</span>
+                <span ng-show="createprojForm.inputDesc.$error.maxlength">Enter less than 10000 characters</span>
+              </div>
+            </div>
+    
+            <!-- Form actions -->
+            <div class="form-group">
+              <div class="col-md-12 text-right">
+                    <input class="btn btn-primary btn-lg" type="submit" id="submitBtn" name="submit" value="Send"
+                    ng-show="createprojForm.inputNameproj.$valid && createprojForm.inputCompany.$valid && createprojForm.inputGoal.$valid && createprojForm.selectSector.$modelValue && createprojForm.inputDesc.$valid"
+                    ng-click="messageCreateP()"/>
+                    <input class="btn btn-primary btn-lg" type="submit" id="submitBtn" name="submit" value="Send"
+                    ng-hide="createprojForm.inputNameproj.$valid && createprojForm.inputCompany.$valid && createprojForm.inputGoal.$valid && createprojForm.selectSector.$modelValue && createprojForm.inputDesc.$valid"
+                    ng-click="nvalidCreateP()"/>
+              </div>
+            </div>
+          </fieldset>
+          </form>
+        </div>
+      </div>
+	</div>
+</div>
+
+<!-- Rewards content -->
+
+<form class="form-horizontal" id="formReward" name="formReward">
+        <div class="form-group">
+                <label class="col-md-3 control-label" for="name" style="max-width: 35%;">Rewards</label><br />
+            <label class="col-md-3 control-label" for="name" style="max-width: 35%;">Title Reward</label>
+            <div class="col-md-9">
+                <input required ng-model="reward.inputTitle" id="inputTitle" name="inputTitle" type="text" placeholder="Title reward" class="form-control" ng-minlength="3" ng-maxlength="20" ng-model-options="{  debounce: 500 }">
+                <span ng-show="formReward.inputTitle.$error.required && (formReward.inputTitle.$dirty || formReward.inputTitle.$touched)">Enter a title</span>
+                <span ng-show="formReward.inputTitle.$error.minlength || formReward.inputTitle.$error.maxlength && (formReward.inputTitle.$dirty || formReward.inputTitle.$touched)">Enter between 3 and 20 characters</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-3 control-label" for="name" style="max-width: 35%;">Money to pay</label>
+            <div class="col-md-9">
+                <input required ng-model="reward.inputMoney" id="inputMoney" name="inputMoney" type="number" placeholder="Your money goal" class="form-control" min="1" max="10000" ng-model-options="{  debounce: 500 }">
+                <span ng-show="formReward.inputMoney.$error.required && (formReward.inputMoney.$dirty || formReward.inputMoney.$touched)">Enter money to pay</span>
+                <span ng-show="formReward.inputMoney.$error.min || formReward.inputMoney.$error.max && (formReward.inputMoney.$dirty || formReward.inputMoney.$touched)">Enter between 1 and 10000 euros</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-3 control-label" for="message" style="max-width: 50%;">Reward Description</label>
+            <div class="col-md-9">
+                <textarea style="resize: none;" required ng-model="reward.inputRDesc" name="inputRDesc" class="form-control" rows="4" cols="50" id="inputRDesc" ng-minlength="20" ng-maxlength="100" ng-model-options="{  debounce: 500 }" placeholder="Please enter your reward description..."></textarea>
+                <span ng-show="formReward.inputRDesc.$error.required && (formReward.inputRDesc.$dirty || formReward.inputRDesc.$touched)">Enter a description</span>
+                <span ng-show="formReward.inputRDesc.$error.minlength">Enter more than 20 characters</span>
+                <span ng-show="formReward.inputRDesc.$error.maxlength">Enter less than 100 characters</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-12 text-right">
+                    <input class="btn btn-primary" type="submit" id="submitBtn" name="submit" value="Save"
+                    ng-show="formReward.inputTitle.$valid && formReward.inputMoney.$valid && formReward.inputRDesc.$valid"
+                    ng-click="saveReward()"/>
+                    <input class="btn btn-primary" type="submit" id="submitBtn" name="submit" value="Save"
+                    ng-hide="formReward.inputTitle.$valid && formReward.inputMoney.$valid && formReward.inputRDesc.$valid"
+                    ng-click="nvalidCreateP()"/>
+            </div>
+        </div>
+    </form>

@@ -16,6 +16,13 @@ function ProjectsConfig($stateProvider) {
         }
       }
     })
+    .state('app.createproj', {
+      url: '/createproj',
+      controller: 'CreateprojCtrl',
+      controllerAs: '$ctrl',
+      templateUrl: 'projects/createproj.html',
+      title: 'Createproj'
+    })
     
   };
 

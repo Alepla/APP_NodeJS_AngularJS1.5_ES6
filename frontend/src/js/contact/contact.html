@@ -11,8 +11,8 @@
               <label class="col-md-3 control-label" for="name" style="max-width: 35%;">Name</label>
               <div class="col-md-9">
                 <input required ng-model="contact.inputName" id="inputName" name="inputName" type="text" placeholder="Your name" class="form-control" ng-minlength="3" ng-maxlength="20" ng-model-options="{  debounce: 500 }">
-                <span ng-show="contactForm.inputName.$error.required && (contactForm.inputName.$dirty || contactForm.inputName.$touched)">Introduzca un nombre</span>
-                <span ng-show="contactForm.inputName.$error.minlength || contactForm.inputName.$error.maxlength && (contactForm.inputName.$dirty || contactForm.inputName.$touched)">Introduzca entre de 3 y 20 caracteres</span>
+                <span ng-show="contactForm.inputName.$error.required && (contactForm.inputName.$dirty || contactForm.inputName.$touched)">Enter a name</span>
+                <span ng-show="contactForm.inputName.$error.minlength || contactForm.inputName.$error.maxlength && (contactForm.inputName.$dirty || contactForm.inputName.$touched)">Enter between 3 and 20 characters</span>
               </div>
             </div>
     
@@ -21,8 +21,8 @@
               <label class="col-md-3 control-label" for="email" style="max-width: 35%;">Your E-mail</label>
               <div class="col-md-9">
                 <input required ng-model="contact.inputMail" name="inputMail" type="text" id="inputMail" class="form-control" placeholder="Your email" ng-pattern="/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/i" ng-model-options="{  debounce: 500 }"/>
-                <span ng-show="contactForm.inputMail.$error.required && (contactForm.inputMail.$dirty || contactForm.inputMail.$touched)">Introduzca un Correo Electronico</span>
-                <span ng-show="contactForm.inputMail.$error.pattern">El formato del Correo Electronico es incorrecto</span>
+                <span ng-show="contactForm.inputMail.$error.required && (contactForm.inputMail.$dirty || contactForm.inputMail.$touched)">Enter a Electronic Mail</span>
+                <span ng-show="contactForm.inputMail.$error.pattern">The format of electronic mail is incorrect</span>
               </div>
             </div>
 
@@ -42,8 +42,8 @@
               <div class="col-md-9">
                 <textarea style="resize: none;" required ng-model="contact.inputMessage" name="inputMessage" class="form-control" rows="4" cols="50" id="inputMessage" ng-minlength="20" ng-maxlength="100" ng-model-options="{  debounce: 500 }" placeholder="Please enter your message here..."></textarea>
                 <span ng-show="contactForm.inputMessage.$error.required && (contactForm.inputMessage.$dirty || contactForm.inputMessage.$touched)">Introduzca un mensaje</span>
-                <span ng-show="contactForm.inputMessage.$error.minlength">Introduzca mas de 20 caracteres</span>
-                <span ng-show="contactForm.inputMessage.$error.maxlength">Introduzca menos de 100 caracteres</span>
+                <span ng-show="contactForm.inputMessage.$error.minlength">Enter more than 20 characters</span>
+                <span ng-show="contactForm.inputMessage.$error.maxlength">Enter less than 100 characters</span>
               </div>
             </div>
     

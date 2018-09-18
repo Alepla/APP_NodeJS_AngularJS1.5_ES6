@@ -10,10 +10,24 @@ export default class Projects {
     }
   
     getProjects() {
-        let deferred = this._$q.defer();
         return this._$http({
             url: `${this._AppConstants.api}/projects`,
             method: 'GET'
+        }).then((res) => res.data.projects);
+    }
+
+    setProjects(project){
+        return this._$http({
+            url: `${this._AppConstants.api}/projects`,
+            method: 'POST',
+            data:project
+        })
+    }
+
+    getProject(id) {
+        return this._$http({
+            url: this._AppConstants.api + '/projects/'+ id,
+            method: 'GET',
         }).then((res) => res.data.projects);
     }
   

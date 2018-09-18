@@ -1,0 +1,70 @@
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8">
+            <br><br>
+            <h1 class="mt-4">{{$ctrl.project.name}}</h1>
+            <p class="lead">
+                by<a href="#">{{$ctrl.project.company}}</a>
+            </p>
+            <hr>
+            <p>Posted on January 1, 2018 at 12:00 PM</p>
+            <hr>
+            <img class="img-fluid rounded" src="http://placehold.it/900x300" alt="">
+            <hr>
+            <p class="lead">{{$ctrl.project.desc}}</p>
+            <blockquote class="blockquote">
+            <p class="mb-0">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+            Integer posuere erat a ante.</p>
+            
+            <footer class="blockquote-footer">Someone famous in
+            <cite title="Source Title">Source Title</cite>
+            </footer>
+            </blockquote>
+            <hr>
+            <!-- Comments Form -->
+            <div class="card my-4">
+                <h5 class="card-header">Leave a Comment:</h5>
+                <div class="card-body">
+                    <form>
+                        <div class="form-group">
+                            <textarea class="form-control" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <br>
+        <!-- Sidebar Widgets Column -->
+        <div class="col-md-4">
+            <br><br><br><br><br><br>
+            <div class="card my-4">
+                <h5 class="card-header">Search</h5>
+                <div class="card-body">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search for...">
+                        <span class="input-group-btn">
+                            <button class="btn btn-secondary" type="button">Go!</button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="card my-4">
+                <h5 class="card-header">Money Goal</h5>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            {{$ctrl.project.goal}}$
+                        </div>
+                        <div class="col-lg-6">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card my-4">
+                <h5 class="card-header">Rewards</h5>
+                <div class="card-body"></div>
+            </div>
+        </div>
+    </div>
+</div>

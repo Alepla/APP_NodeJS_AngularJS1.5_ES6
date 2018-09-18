@@ -1,25 +1,27 @@
 class ContactCtrl {
-    constructor($scope, Contact, Toastr) {
+    constructor(Contact, Toastr,$timeout,$state) {
 		  'ngInject';
 		  
-		$scope.infoSelect = ["No puedo pagar","No puedo crear un proyecto","No me deja registrarme","Problemas con la contraseña"];
-		$scope.showSubject = false;
+		this.infoSelect = ["No puedo pagar","No puedo crear un proyecto","No me deja registrarme","Problemas con la contraseña"];
+		this.showSubject = false;
+		this.showButton = true;
 		 
-		$scope.nvalidContact = function(){
+		this.nvalidContact = function(){
 			Toastr.showToastr(
 				'error',
 				'Rellena todos los campos del formulario'
 			);
 		}
 
-		$scope.messageContact = function(){
+		this.messageContact = function(){
+			this.showButton = false;
 			var data = {
-				name: $scope.contact.inputName,
+				name: this.contact.inputName,
 				from: 'crowcode@gmail.com',
 				type: 'user',
-				subject: $scope.contact.inputSubject,
-				to: $scope.contact.inputMail,
-				text: $scope.contact.inputMessage
+				subject: this.contact.inputSubject,
+				to: this.contact.inputMail,
+				text: this.contact.inputMessage
 			};
 			Contact.sendEmail(data).then(function(response){
 				if(response){
@@ -27,7 +29,11 @@ class ContactCtrl {
 						'success',
 						'Correo enviado correctamente'
 					);
+					$timeout( function(){
+						$state.go('app.home');
+					}, 4000 );
 				}else{
+					this.showButton = true;
 					Toastr.showToastr(
 						'error',
 						'Error al enviar el correo'
@@ -36,12 +42,12 @@ class ContactCtrl {
 			});
 
 			var data = {
-				name: $scope.contact.inputName,
+				name: this.contact.inputName,
 				from: 'crowcode@gmail.com',
 				type: 'admin',
-				subject: $scope.contact.inputSubject,
+				subject: this.contact.inputSubject,
 				to: 'daniortizgar@gmail.com',
-				text: $scope.contact.inputMessage
+				text: this.contact.inputMessage
 			};
 			Contact.sendEmail(data).then(function(response){
 				/*if(response){

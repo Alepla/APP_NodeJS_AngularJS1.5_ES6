@@ -11,4 +11,7 @@ projectsModule.controller('ProjectsCtrl', ProjectsCtrl);
 import CreateprojCtrl from './createproj.controller';
 projectsModule.controller('CreateprojCtrl', CreateprojCtrl);
 
+import DetailsProjectCtrl from './detailsproj.controller';
+projectsModule.controller('DetailsProjectCtrl', DetailsProjectCtrl);
+
 export default projectsModule;

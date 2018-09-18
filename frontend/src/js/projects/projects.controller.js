@@ -1,17 +1,17 @@
 class ProjectsCtrl {
-    constructor($scope,projects,$state) {
+    constructor(projects,$state) {
         'ngInject';
-          
+
+        console.log(projects);
         if(projects){
-            $scope.infoProj = projects;
+            this.infoProj = projects;
         }else{
-            $scope.infoProj = "error";
+            this.infoProj = "error";
         }
 
-        /*$scope.openCreate = function(){
-            $state.go('app.createproj');
-        }*/
-        
+        this.openDetails = function(ID){
+            $state.go('app.detailsproject', { id: ID });
+        };
     }
 }
 

@@ -23,6 +23,20 @@ function ProjectsConfig($stateProvider) {
       templateUrl: 'projects/createproj.html',
       title: 'Createproj'
     })
+    .state('app.detailsproject', {
+      url: '/projects/:id',
+      controller: 'DetailsProjectCtrl',
+      controllerAs: '$ctrl',
+      templateUrl: 'projects/detailsproj.html',
+      title: 'Details Project',
+      resolve: {
+        project: function(Projects, $stateParams) {
+          return Projects.getProject($stateParams.id).then(
+            (Projects) => Projects
+          )
+        }
+      }
+    });
     
   };
 

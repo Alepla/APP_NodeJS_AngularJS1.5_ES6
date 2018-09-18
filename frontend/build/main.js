@@ -42887,7 +42887,7 @@ _angular2.default.bootstrap(document, ['app'], {
   strictDi: true
 });
 
-},{"./article":12,"./auth":15,"./components":22,"./config/app.config":25,"./config/app.constants":26,"./config/app.run":27,"./config/app.templates":28,"./contact":32,"./editor":35,"./home":38,"./layout":41,"./profile":42,"./projects":47,"./services":53,"./settings":60,"angular":5,"angular-toastr":2,"angular-ui-router":3}],8:[function(require,module,exports){
+},{"./article":12,"./auth":15,"./components":22,"./config/app.config":25,"./config/app.constants":26,"./config/app.run":27,"./config/app.templates":28,"./contact":32,"./editor":35,"./home":38,"./layout":41,"./profile":42,"./projects":48,"./services":54,"./settings":61,"angular":5,"angular-toastr":2,"angular-ui-router":3}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -43778,16 +43778,17 @@ angular.module("templates", []).run(["$templateCache", function ($templateCache)
   $templateCache.put("article/comment.html", "<div class=\"card\">\n  <div class=\"card-block\">\n    <p class=\"card-text\" ng-bind=\"::$ctrl.data.body\"></p>\n  </div>\n  <div class=\"card-footer\">\n    <a class=\"comment-author\" ui-sref=\"app.profile.main({ username: $ctrl.data.author.username })\">\n      <img ng-src=\"{{::$ctrl.data.author.image}}\" class=\"comment-author-img\" />\n    </a>\n    &nbsp;\n    <a class=\"comment-author\" ui-sref=\"app.profile.main({ username: $ctrl.data.author.username })\" ng-bind=\"::$ctrl.data.author.username\">\n    </a>\n    <span class=\"date-posted\"\n      ng-bind=\"::$ctrl.data.createdAt | date: \'longDate\'\">\n    </span>\n    <span class=\"mod-options\" ng-show=\"$ctrl.canModify\">\n      <i class=\"ion-trash-a\" ng-click=\"$ctrl.deleteCb()\"></i>\n    </span>\n  </div>\n</div>\n");
   $templateCache.put("auth/auth.html", "<div class=\"auth-page\">\n  <div class=\"container page\">\n    <div class=\"row\">\n\n      <div class=\"col-md-6 offset-md-3 col-xs-12\">\n        <h1 class=\"text-xs-center\" ng-bind=\"::$ctrl.title\"></h1>\n        <p class=\"text-xs-center\">\n          <a ui-sref=\"app.login\"\n            ng-show=\"$ctrl.authType === \'register\'\">\n            Have an account?\n          </a>\n          <a ui-sref=\"app.register\"\n            ng-show=\"$ctrl.authType === \'login\'\">\n            Need an account?\n          </a>\n        </p>\n\n        <list-errors errors=\"$ctrl.errors\"></list-errors>\n\n        <form ng-submit=\"$ctrl.submitForm()\">\n          <fieldset ng-disabled=\"$ctrl.isSubmitting\">\n\n            <fieldset class=\"form-group\" ng-show=\"$ctrl.authType === \'register\'\">\n              <input class=\"form-control form-control-lg\"\n                type=\"text\"\n                placeholder=\"Username\"\n                ng-model=\"$ctrl.formData.username\" />\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control form-control-lg\"\n                type=\"email\"\n                placeholder=\"Email\"\n                ng-model=\"$ctrl.formData.email\" />\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control form-control-lg\"\n                type=\"password\"\n                placeholder=\"Password\"\n                ng-model=\"$ctrl.formData.password\" />\n            </fieldset>\n\n            <button class=\"btn btn-lg btn-primary pull-xs-right\"\n              type=\"submit\"\n              ng-bind=\"::$ctrl.title\">\n            </button>\n\n          </fieldset>\n        </form>\n      </div>\n\n    </div>\n  </div>\n</div>\n");
   $templateCache.put("components/list-errors.html", "<ul class=\"error-messages\" ng-show=\"$ctrl.errors\">\n  <div ng-repeat=\"(field, errors) in $ctrl.errors\">\n    <li ng-repeat=\"error in errors\">\n      {{field}} {{error}}\n    </li>\n  </div>\n</ul>\n");
-  $templateCache.put("contact/contact.html", "<div class=\"container\" style=\"margin-top: 75px; background-color: #cfcfcf; border-radius: 10px;\">\n	<div class=\"row\">\n      <div class=\"col-md-6 col-md-offset-3\">\n        <div class=\"well well-sm\">\n          <form class=\"form-horizontal\" id=\"contactForm\" name=\"contactForm\">\n          <fieldset>\n            <legend class=\"text-center\">Contact us</legend>\n    \n            <!-- Name input -->\n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Name</label>\n              <div class=\"col-md-9\">\n                <input required ng-model=\"contact.inputName\" id=\"inputName\" name=\"inputName\" type=\"text\" placeholder=\"Your name\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"20\" ng-model-options=\"{  debounce: 500 }\">\n                <span ng-show=\"contactForm.inputName.$error.required && (contactForm.inputName.$dirty || contactForm.inputName.$touched)\">Enter a name</span>\n                <span ng-show=\"contactForm.inputName.$error.minlength || contactForm.inputName.$error.maxlength && (contactForm.inputName.$dirty || contactForm.inputName.$touched)\">Enter between 3 and 20 characters</span>\n              </div>\n            </div>\n    \n            <!-- Email input -->\n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"email\" style=\"max-width: 35%;\">Your E-mail</label>\n              <div class=\"col-md-9\">\n                <input required ng-model=\"contact.inputMail\" name=\"inputMail\" type=\"text\" id=\"inputMail\" class=\"form-control\" placeholder=\"Your email\" ng-pattern=\"/^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$/i\" ng-model-options=\"{  debounce: 500 }\"/>\n                <span ng-show=\"contactForm.inputMail.$error.required && (contactForm.inputMail.$dirty || contactForm.inputMail.$touched)\">Enter a Electronic Mail</span>\n                <span ng-show=\"contactForm.inputMail.$error.pattern\">The format of electronic mail is incorrect</span>\n              </div>\n            </div>\n\n          <!-- Subject select -->\n          <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"subject\" style=\"max-width: 35%;\">Your Subject</label>\n            <div class=\"col-md-9\">\n                <select class=\"form-control\" ng-options=\"infoSelect as infoSelect for infoSelect in infoSelect track by infoSelect\" ng-model=\"contact.inputSubject\" name=\"inputSubject\">\n                  <option ng-show=\"showSubject\" value=\"\" selected>-- Select your subject --</option>\n                </select>\n            </div>\n          </div>\n\n            <!-- Message body -->\n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"message\" style=\"max-width: 35%;\">Your message</label>\n              <div class=\"col-md-9\">\n                <textarea style=\"resize: none;\" required ng-model=\"contact.inputMessage\" name=\"inputMessage\" class=\"form-control\" rows=\"4\" cols=\"50\" id=\"inputMessage\" ng-minlength=\"20\" ng-maxlength=\"100\" ng-model-options=\"{  debounce: 500 }\" placeholder=\"Please enter your message here...\"></textarea>\n                <span ng-show=\"contactForm.inputMessage.$error.required && (contactForm.inputMessage.$dirty || contactForm.inputMessage.$touched)\">Introduzca un mensaje</span>\n                <span ng-show=\"contactForm.inputMessage.$error.minlength\">Enter more than 20 characters</span>\n                <span ng-show=\"contactForm.inputMessage.$error.maxlength\">Enter less than 100 characters</span>\n              </div>\n            </div>\n    \n            <!-- Form actions -->\n            <div class=\"form-group\">\n              <div class=\"col-md-12 text-right\">\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-show=\"contactForm.inputName.$valid && contactForm.inputMail.$valid && contactForm.inputSubject.$modelValue && contactForm.inputMessage.$valid\"\n                    ng-click=\"messageContact()\"/>\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-hide=\"contactForm.inputName.$valid && contactForm.inputMail.$valid && contactForm.inputSubject.$modelValue && contactForm.inputMessage.$valid\"\n                    ng-click=\"nvalidContact()\"/>\n              </div>\n            </div>\n          </fieldset>\n          </form>\n        </div>\n      </div>\n	</div>\n</div>\n");
+  $templateCache.put("contact/contact.html", "<div class=\"container\" style=\"margin-top: 75px; background-color: #cfcfcf; border-radius: 10px;\">\n	<div class=\"row\">\n      <div class=\"col-md-6 col-md-offset-3\">\n        <div class=\"well well-sm\">\n          <form class=\"form-horizontal\" id=\"contactForm\" name=\"contactForm\">\n          <fieldset>\n            <legend class=\"text-center\">Contact us</legend>\n    \n            <!-- Name input -->\n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Name</label>\n              <div class=\"col-md-9\">\n                <input required ng-model=\"$ctrl.contact.inputName\" id=\"inputName\" name=\"inputName\" type=\"text\" placeholder=\"Your name\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"20\" ng-model-options=\"{  debounce: 500 }\">\n                <span ng-show=\"contactForm.inputName.$error.required && (contactForm.inputName.$dirty || contactForm.inputName.$touched)\">Enter a name</span>\n                <span ng-show=\"contactForm.inputName.$error.minlength || contactForm.inputName.$error.maxlength && (contactForm.inputName.$dirty || contactForm.inputName.$touched)\">Enter between 3 and 20 characters</span>\n              </div>\n            </div>\n    \n            <!-- Email input -->\n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"email\" style=\"max-width: 35%;\">Your E-mail</label>\n              <div class=\"col-md-9\">\n                <input required ng-model=\"$ctrl.contact.inputMail\" name=\"inputMail\" type=\"text\" id=\"inputMail\" class=\"form-control\" placeholder=\"Your email\" ng-pattern=\"/^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$/i\" ng-model-options=\"{  debounce: 500 }\"/>\n                <span ng-show=\"contactForm.inputMail.$error.required && (contactForm.inputMail.$dirty || contactForm.inputMail.$touched)\">Enter a Electronic Mail</span>\n                <span ng-show=\"contactForm.inputMail.$error.pattern\">The format of electronic mail is incorrect</span>\n              </div>\n            </div>\n\n          <!-- Subject select -->\n          <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"subject\" style=\"max-width: 35%;\">Your Subject</label>\n            <div class=\"col-md-9\">\n                <select class=\"form-control\" ng-options=\"infoSelect as infoSelect for infoSelect in $ctrl.infoSelect track by infoSelect\" ng-model=\"$ctrl.contact.inputSubject\" name=\"inputSubject\">\n                  <option ng-show=\"$ctrl.showSubject\" value=\"\" selected>-- Select your subject --</option>\n                </select>\n            </div>\n          </div>\n\n            <!-- Message body -->\n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"message\" style=\"max-width: 35%;\">Your message</label>\n              <div class=\"col-md-9\">\n                <textarea style=\"resize: none;\" required ng-model=\"$ctrl.contact.inputMessage\" name=\"inputMessage\" class=\"form-control\" rows=\"4\" cols=\"50\" id=\"inputMessage\" ng-minlength=\"20\" ng-maxlength=\"100\" ng-model-options=\"{  debounce: 500 }\" placeholder=\"Please enter your message here...\"></textarea>\n                <span ng-show=\"contactForm.inputMessage.$error.required && (contactForm.inputMessage.$dirty || contactForm.inputMessage.$touched)\">Introduzca un mensaje</span>\n                <span ng-show=\"contactForm.inputMessage.$error.minlength\">Enter more than 20 characters</span>\n                <span ng-show=\"contactForm.inputMessage.$error.maxlength\">Enter less than 100 characters</span>\n              </div>\n            </div>\n    \n            <!-- Form actions -->\n            <div class=\"form-group\">\n              <div class=\"col-md-12 text-right\">\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-show=\"contactForm.inputName.$valid && contactForm.inputMail.$valid && contactForm.inputSubject.$modelValue && contactForm.inputMessage.$valid && $ctrl.showButton\"\n                    ng-click=\"$ctrl.messageContact()\"/>\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-hide=\"contactForm.inputName.$valid && contactForm.inputMail.$valid && contactForm.inputSubject.$modelValue && contactForm.inputMessage.$valid\"\n                    ng-click=\"$ctrl.nvalidContact()\"/>\n              </div>\n            </div>\n          </fieldset>\n          </form>\n        </div>\n      </div>\n	</div>\n</div>\n");
   $templateCache.put("editor/editor.html", "<div class=\"editor-page\">\n  <div class=\"container page\">\n    <div class=\"row\">\n      <div class=\"col-md-10 offset-md-1 col-xs-12\">\n\n        <list-errors errors=\"$ctrl.errors\"></list-errors>\n\n        <form>\n          <fieldset ng-disabled=\"$ctrl.isSubmitting\">\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control form-control-lg\"\n                ng-model=\"$ctrl.article.title\"\n                type=\"text\"\n                placeholder=\"Article Title\" />\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control\"\n                ng-model=\"$ctrl.article.description\"\n                type=\"text\"\n                placeholder=\"What\'s this article about?\" />\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <textarea class=\"form-control\"\n                rows=\"8\"\n                ng-model=\"$ctrl.article.body\"\n                placeholder=\"Write your article (in markdown)\">\n              </textarea>\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control\"\n                type=\"text\"\n                placeholder=\"Enter tags\"\n                ng-model=\"$ctrl.tagField\"\n                ng-keyup=\"$event.keyCode == 13 && $ctrl.addTag()\" />\n\n              <div class=\"tag-list\">\n                <span ng-repeat=\"tag in $ctrl.article.tagList\"\n                  class=\"tag-default tag-pill\">\n                  <i class=\"ion-close-round\" ng-click=\"$ctrl.removeTag(tag)\"></i>\n                  {{ tag }}\n                </span>\n              </div>\n            </fieldset>\n\n            <button class=\"btn btn-lg pull-xs-right btn-primary\" type=\"button\" ng-click=\"$ctrl.submit()\">\n              Publish Article\n            </button>\n\n          </fieldset>\n        </form>\n\n      </div>\n    </div>\n  </div>\n</div>\n");
   $templateCache.put("home/home.html", " <div class=\"home-page\">\n\n  <!-- Splash banner that only shows when not logged in -->\n  <div class=\"banner\" show-authed=\"false\">\n    <div class=\"container\">\n      <h1 class=\"logo-font\" ng-bind=\"::$ctrl.appName | lowercase\"></h1>\n      <p>A place to share your knowledge.</p>\n    </div>\n  </div>\n\n  <div class=\"container page\">\n    <div class=\"row\">\n\n\n      <!-- Main view - contains tabs & article list -->\n      <div class=\"col-md-9\">\n        <!-- Tabs for toggling between feed, article lists -->\n        <div class=\"feed-toggle\">\n          <ul class=\"nav nav-pills outline-active\">\n\n            <li class=\"nav-item\" show-authed=\"true\">\n              <a href=\"\" class=\"nav-link\"\n                ng-class=\"{ active: $ctrl.listConfig.type === \'feed\' }\"\n                ng-click=\"$ctrl.changeList({ type: \'feed\' })\">\n                Your Feed\n              </a>\n            </li>\n\n            <li class=\"nav-item\">\n              <a href=\"\" class=\"nav-link\"\n                ng-class=\"{ active: $ctrl.listConfig.type === \'all\' && !$ctrl.listConfig.filters }\"\n                ng-click=\"$ctrl.changeList({ type: \'all\' })\">\n                Global Feed\n              </a>\n            </li>\n\n            <li class=\"nav-item\" ng-show=\"$ctrl.listConfig.filters.tag\">\n              <a href=\"\" class=\"nav-link active\">\n                <i class=\"ion-pound\"></i> {{$ctrl.listConfig.filters.tag}}\n              </a>\n            </li>\n\n          </ul>\n        </div>\n\n        <!-- List the current articles -->\n        <article-list limit=\"10\" list-config=\"$ctrl.listConfig\"></article-list>\n\n      </div>\n\n      <!-- Sidebar where popular tags are listed -->\n      <div class=\"col-md-3\">\n        <div class=\"sidebar\">\n\n          <p>Popular Tags</p>\n\n          <div class=\"tag-list\" ng-show=\"$ctrl.tags\">\n            <a href=\"\" class=\"tag-default tag-pill\"\n              ng-click=\"$ctrl.changeList({ type: \'all\', filters: { tag: tagName } })\"\n              ng-repeat=\"tagName in $ctrl.tags\"\n              ng-bind=\"tagName\">\n            </a>\n          </div>\n\n          <div ng-show=\"!$ctrl.tagsLoaded\">\n            Loading tags...\n          </div>\n\n          <div class=\"post-preview\"\n            ng-show=\"$ctrl.tagsLoaded && !$ctrl.tags.length\">\n            No tags are here... yet.\n          </div>\n\n        </div>\n      </div>\n\n      <!-- End the row & container divs -->\n    </div>\n  </div>\n\n</div>\n");
-  $templateCache.put("profile/profile-articles.html", "<article-list limit=\"5\" list-config=\"$ctrl.listConfig\"></article-list>\n");
-  $templateCache.put("profile/profile.html", "<div class=\"profile-page\">\n\n  <!-- User\'s basic info & action buttons -->\n  <div class=\"user-info\">\n    <div class=\"container\">\n      <div class=\"row\">\n        <div class=\"col-xs-12 col-md-10 offset-md-1\">\n\n          <img ng-src=\"{{::$ctrl.profile.image}}\" class=\"user-img\" />\n          <h4 ng-bind=\"::$ctrl.profile.username\"></h4>\n          <p ng-bind=\"::$ctrl.profile.bio\"></p>\n\n          <a ui-sref=\"app.settings\"\n            class=\"btn btn-sm btn-outline-secondary action-btn\"\n            ng-show=\"$ctrl.isUser\">\n            <i class=\"ion-gear-a\"></i> Edit Profile Settings\n          </a>\n\n          <follow-btn user=\"$ctrl.profile\" ng-hide=\"$ctrl.isUser\"></follow-btn>\n\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Container where User\'s posts & favs are list w/ toggle tabs -->\n  <div class=\"container\">\n    <div class=\"row\">\n\n      <div class=\"col-xs-12 col-md-10 offset-md-1\">\n\n        <!-- Tabs for switching between author articles & favorites -->\n        <div class=\"articles-toggle\">\n          <ul class=\"nav nav-pills outline-active\">\n\n            <li class=\"nav-item\">\n              <a class=\"nav-link active\"\n                ui-sref-active=\"active\"\n                ui-sref=\"app.profile.main({username: $ctrl.profile.username})\">\n                My Articles\n              </a>\n            </li>\n\n            <li class=\"nav-item\">\n              <a class=\"nav-link\"\n                ui-sref-active=\"active\"\n                ui-sref=\"app.profile.favorites({username: $ctrl.profile.username})\">\n                Favorited Articles\n              </a>\n            </li>\n\n          </ul>\n        </div>\n\n        <!-- List of articles -->\n        <div ui-view></div>\n\n\n      </div>\n\n    <!-- End row & container divs -->\n    </div>\n  </div>\n\n</div>\n");
   $templateCache.put("layout/app-view.html", "<app-header></app-header>\n\n<div ui-view></div>\n\n<app-footer></app-footer>\n");
   $templateCache.put("layout/footer.html", "<footer>\n  <div class=\"container\">\n    <a class=\"logo-font\" ui-sref=\"app.home\" ng-bind=\"::$ctrl.appName | lowercase\"></a>\n    <span class=\"attribution\">\n      &copy; {{::$ctrl.date | date:\'yyyy\'}}.\n      An interactive learning project from <a href=\"https://thinkster.io\">Thinkster</a>.\n      Code licensed under MIT.\n    </span>\n  </div>\n</footer>\n");
   $templateCache.put("layout/header.html", "<nav class=\"navbar navbar-light\">\n  <div class=\"container\">\n\n    <a class=\"navbar-brand\"\n      ui-sref=\"app.home\"\n      ng-bind=\"::$ctrl.appName | lowercase\">\n    </a>\n\n    <!-- Show this for logged out users -->\n    <ul show-authed=\"false\"\n      class=\"nav navbar-nav pull-xs-right\">\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.home\">\n          Home\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.contact\">\n          Contact\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.projects\">\n          Projects\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.login\">\n          Sign in\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.register\">\n          Sign up\n        </a>\n      </li>\n\n    </ul>\n\n    <!-- Show this for logged in users -->\n    <ul show-authed=\"true\"\n      class=\"nav navbar-nav pull-xs-right\">\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.home\">\n          Home\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.contact\">\n          Contact\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.projects\">\n          Projects\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.editor\">\n          <i class=\"ion-compose\"></i>&nbsp;New Article\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.settings\">\n          <i class=\"ion-gear-a\"></i>&nbsp;Settings\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.profile.main({ username: $ctrl.currentUser.username})\">\n          <img ng-src=\"{{$ctrl.currentUser.image}}\" class=\"user-pic\" />\n          {{ $ctrl.currentUser.username }}\n        </a>\n      </li>\n\n    </ul>\n\n\n  </div>\n</nav>\n");
-  $templateCache.put("projects/createproj.html", "<div class=\"container\" style=\"margin-top: 75px; background-color: #cfcfcf; border-radius: 10px;\">\n	<div class=\"row\">\n      <div class=\"col-md-6 col-md-offset-3\">\n        <div class=\"well well-sm\">\n          <form class=\"form-horizontal\" id=\"createprojForm\" name=\"createprojForm\">\n          <fieldset>\n            <legend class=\"text-center\">Create Projects</legend>\n    \n            <!-- Name input -->\n            <div class=\"form-group\">\n                <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Name Project</label>\n                <div class=\"col-md-9\">\n                    <input required ng-model=\"createproj.inputNameproj\" id=\"inputNameproj\" name=\"inputNameproj\" type=\"text\" placeholder=\"Your name\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"20\" ng-model-options=\"{  debounce: 500 }\">\n                    <span ng-show=\"createprojForm.inputNameproj.$error.required && (createprojForm.inputNameproj.$dirty || createprojForm.inputNameproj.$touched)\">Enter a name</span>\n                    <span ng-show=\"createprojForm.inputNameproj.$error.minlength || createprojForm.inputNameproj.$error.maxlength && (createprojForm.inputNameproj.$dirty || createprojForm.inputNameproj.$touched)\">Enter between 3 and 20 characters</span>\n                </div>\n            </div>\n\n            <!-- CompanyName input -->\n            <div class=\"form-group\">\n                <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Company(person)</label>\n                <div class=\"col-md-9\">\n                    <input required ng-model=\"createproj.inputCompany\" id=\"inputCompany\" name=\"inputCompany\" type=\"text\" placeholder=\"Your company name\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"20\" ng-model-options=\"{  debounce: 500 }\">\n                    <span ng-show=\"createprojForm.inputCompany.$error.required && (createprojForm.inputCompany.$dirty || createprojForm.inputCompany.$touched)\">Enter a company</span>\n                    <span ng-show=\"createprojForm.inputCompany.$error.minlength || createprojForm.inputCompany.$error.maxlength && (createprojForm.inputCompany.$dirty || createprojForm.inputCompany.$touched)\">Enter between 3 and 20 characters</span>\n                </div>\n            </div>\n\n            <!-- Money Goal input -->\n            <div class=\"form-group\">\n                <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Money Goal</label>\n                <div class=\"col-md-9\">\n                    <input required ng-model=\"createproj.inputGoal\" id=\"inputGoal\" name=\"inputGoal\" type=\"number\" placeholder=\"Your money goal\" class=\"form-control\" min=\"100\" max=\"500000\" ng-model-options=\"{  debounce: 500 }\">\n                    <span ng-show=\"createprojForm.inputGoal.$error.required && (createprojForm.inputGoal.$dirty || createprojForm.inputGoal.$touched)\">Enter a money goal</span>\n                    <span ng-show=\"createprojForm.inputGoal.$error.min || createprojForm.inputGoal.$error.max && (createprojForm.inputGoal.$dirty || createprojForm.inputGoal.$touched)\">Enter between 100 and 500000 euros</span>\n                </div>\n            </div>\n\n          <!-- Sector select -->\n          <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"subject\" style=\"max-width: 35%;\">Your Sector</label>\n            <div class=\"col-md-9\">\n                <select class=\"form-control\" ng-options=\"selectSector as selectSector for selectSector in selectSector track by selectSector\" ng-model=\"createproj.selectSector\" name=\"selectSector\">\n                  <option ng-show=\"showSector\" value=\"\" selected>-- Select your sector --</option>\n                </select>\n            </div>\n          </div>\n\n            <!-- Description body -->\n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"message\" style=\"max-width: 50%;\">Project Description</label>\n              <div class=\"col-md-9\">\n                <textarea style=\"resize: none;\" required ng-model=\"createproj.inputDesc\" name=\"inputDesc\" class=\"form-control\" rows=\"4\" cols=\"50\" id=\"inputDesc\" ng-minlength=\"100\" ng-maxlength=\"10000\" ng-model-options=\"{  debounce: 500 }\" placeholder=\"Please enter your message here...\"></textarea>\n                <span ng-show=\"createprojForm.inputDesc.$error.required && (createprojForm.inputDesc.$dirty || createprojForm.inputDesc.$touched)\">Enter a description</span>\n                <span ng-show=\"createprojForm.inputDesc.$error.minlength\">Enter more than 100 characters</span>\n                <span ng-show=\"createprojForm.inputDesc.$error.maxlength\">Enter less than 10000 characters</span>\n              </div>\n            </div>\n    \n            <!-- Form actions -->\n            <div class=\"form-group\">\n              <div class=\"col-md-12 text-right\">\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-show=\"createprojForm.inputNameproj.$valid && createprojForm.inputCompany.$valid && createprojForm.inputGoal.$valid && createprojForm.selectSector.$modelValue && createprojForm.inputDesc.$valid\"\n                    ng-click=\"messageCreateP()\"/>\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-hide=\"createprojForm.inputNameproj.$valid && createprojForm.inputCompany.$valid && createprojForm.inputGoal.$valid && createprojForm.selectSector.$modelValue && createprojForm.inputDesc.$valid\"\n                    ng-click=\"nvalidCreateP()\"/>\n              </div>\n            </div>\n          </fieldset>\n          </form>\n        </div>\n      </div>\n	</div>\n</div>\n\n<!-- Rewards content -->\n\n<form class=\"form-horizontal\" id=\"formReward\" name=\"formReward\">\n        <div class=\"form-group\">\n                <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Rewards</label><br />\n            <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Title Reward</label>\n            <div class=\"col-md-9\">\n                <input required ng-model=\"reward.inputTitle\" id=\"inputTitle\" name=\"inputTitle\" type=\"text\" placeholder=\"Title reward\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"20\" ng-model-options=\"{  debounce: 500 }\">\n                <span ng-show=\"formReward.inputTitle.$error.required && (formReward.inputTitle.$dirty || formReward.inputTitle.$touched)\">Enter a title</span>\n                <span ng-show=\"formReward.inputTitle.$error.minlength || formReward.inputTitle.$error.maxlength && (formReward.inputTitle.$dirty || formReward.inputTitle.$touched)\">Enter between 3 and 20 characters</span>\n            </div>\n        </div>\n\n        <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Money to pay</label>\n            <div class=\"col-md-9\">\n                <input required ng-model=\"reward.inputMoney\" id=\"inputMoney\" name=\"inputMoney\" type=\"number\" placeholder=\"Your money goal\" class=\"form-control\" min=\"1\" max=\"10000\" ng-model-options=\"{  debounce: 500 }\">\n                <span ng-show=\"formReward.inputMoney.$error.required && (formReward.inputMoney.$dirty || formReward.inputMoney.$touched)\">Enter money to pay</span>\n                <span ng-show=\"formReward.inputMoney.$error.min || formReward.inputMoney.$error.max && (formReward.inputMoney.$dirty || formReward.inputMoney.$touched)\">Enter between 1 and 10000 euros</span>\n            </div>\n        </div>\n\n        <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"message\" style=\"max-width: 50%;\">Reward Description</label>\n            <div class=\"col-md-9\">\n                <textarea style=\"resize: none;\" required ng-model=\"reward.inputRDesc\" name=\"inputRDesc\" class=\"form-control\" rows=\"4\" cols=\"50\" id=\"inputRDesc\" ng-minlength=\"20\" ng-maxlength=\"100\" ng-model-options=\"{  debounce: 500 }\" placeholder=\"Please enter your reward description...\"></textarea>\n                <span ng-show=\"formReward.inputRDesc.$error.required && (formReward.inputRDesc.$dirty || formReward.inputRDesc.$touched)\">Enter a description</span>\n                <span ng-show=\"formReward.inputRDesc.$error.minlength\">Enter more than 20 characters</span>\n                <span ng-show=\"formReward.inputRDesc.$error.maxlength\">Enter less than 100 characters</span>\n            </div>\n        </div>\n        <div class=\"form-group\">\n            <div class=\"col-md-12 text-right\">\n                    <input class=\"btn btn-primary\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Save\"\n                    ng-show=\"formReward.inputTitle.$valid && formReward.inputMoney.$valid && formReward.inputRDesc.$valid\"\n                    ng-click=\"saveReward()\"/>\n                    <input class=\"btn btn-primary\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Save\"\n                    ng-hide=\"formReward.inputTitle.$valid && formReward.inputMoney.$valid && formReward.inputRDesc.$valid\"\n                    ng-click=\"nvalidCreateP()\"/>\n            </div>\n        </div>\n    </form>\n");
-  $templateCache.put("projects/projects.html", "<h1>Todos los projectos</h1>\n\n<button class=\"btn btn-primary btn-lg\" ui-sref=\"app.createproj\">Create project</button>\n<div style=\"text-align:center;\">\n    <div ng-repeat=\"proj in infoProj\" style=\"width:48%; display:inline-block; margin:1%;\">\n        <span>Name: {{proj.name}}</span><br />\n        <span>Goal: {{proj.goal}}</span><br />\n        <span>Description: {{proj.description}}</span><br />\n        <span>Owner: {{proj.owner}}</span>\n    </div>\n</div>\n");
+  $templateCache.put("profile/profile-articles.html", "<article-list limit=\"5\" list-config=\"$ctrl.listConfig\"></article-list>\n");
+  $templateCache.put("profile/profile.html", "<div class=\"profile-page\">\n\n  <!-- User\'s basic info & action buttons -->\n  <div class=\"user-info\">\n    <div class=\"container\">\n      <div class=\"row\">\n        <div class=\"col-xs-12 col-md-10 offset-md-1\">\n\n          <img ng-src=\"{{::$ctrl.profile.image}}\" class=\"user-img\" />\n          <h4 ng-bind=\"::$ctrl.profile.username\"></h4>\n          <p ng-bind=\"::$ctrl.profile.bio\"></p>\n\n          <a ui-sref=\"app.settings\"\n            class=\"btn btn-sm btn-outline-secondary action-btn\"\n            ng-show=\"$ctrl.isUser\">\n            <i class=\"ion-gear-a\"></i> Edit Profile Settings\n          </a>\n\n          <follow-btn user=\"$ctrl.profile\" ng-hide=\"$ctrl.isUser\"></follow-btn>\n\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Container where User\'s posts & favs are list w/ toggle tabs -->\n  <div class=\"container\">\n    <div class=\"row\">\n\n      <div class=\"col-xs-12 col-md-10 offset-md-1\">\n\n        <!-- Tabs for switching between author articles & favorites -->\n        <div class=\"articles-toggle\">\n          <ul class=\"nav nav-pills outline-active\">\n\n            <li class=\"nav-item\">\n              <a class=\"nav-link active\"\n                ui-sref-active=\"active\"\n                ui-sref=\"app.profile.main({username: $ctrl.profile.username})\">\n                My Articles\n              </a>\n            </li>\n\n            <li class=\"nav-item\">\n              <a class=\"nav-link\"\n                ui-sref-active=\"active\"\n                ui-sref=\"app.profile.favorites({username: $ctrl.profile.username})\">\n                Favorited Articles\n              </a>\n            </li>\n\n          </ul>\n        </div>\n\n        <!-- List of articles -->\n        <div ui-view></div>\n\n\n      </div>\n\n    <!-- End row & container divs -->\n    </div>\n  </div>\n\n</div>\n");
+  $templateCache.put("projects/createproj.html", "<div class=\"container\" style=\"margin-top: 75px; background-color: #cfcfcf; border-radius: 10px;\">\n	<div class=\"row\">\n      <div class=\"col-md-6 col-md-offset-3\">\n        <div class=\"well well-sm\">\n          <form class=\"form-horizontal\" id=\"createprojForm\" name=\"createprojForm\">\n          <fieldset>\n            <legend class=\"text-center\">Create Projects</legend>\n    \n            <!-- Name input -->\n            <div class=\"form-group\">\n                <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Name Project</label>\n                <div class=\"col-md-9\">\n                    <input required ng-model=\"$ctrl.createproj.inputNameproj\" id=\"inputNameproj\" name=\"inputNameproj\" type=\"text\" placeholder=\"Your name\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"30\" ng-model-options=\"{  debounce: 500 }\">\n                    <span ng-show=\"createprojForm.inputNameproj.$error.required && (createprojForm.inputNameproj.$dirty || createprojForm.inputNameproj.$touched)\">Enter a name</span>\n                    <span ng-show=\"createprojForm.inputNameproj.$error.minlength || createprojForm.inputNameproj.$error.maxlength && (createprojForm.inputNameproj.$dirty || createprojForm.inputNameproj.$touched)\">Enter between 3 and 30 characters</span>\n                </div>\n            </div>\n\n            <!-- CompanyName input -->\n            <div class=\"form-group\">\n                <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Company(person)</label>\n                <div class=\"col-md-9\">\n                    <input required ng-model=\"$ctrl.createproj.inputCompany\" id=\"inputCompany\" name=\"inputCompany\" type=\"text\" placeholder=\"Your company name\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"30\" ng-model-options=\"{  debounce: 500 }\">\n                    <span ng-show=\"createprojForm.inputCompany.$error.required && (createprojForm.inputCompany.$dirty || createprojForm.inputCompany.$touched)\">Enter a company</span>\n                    <span ng-show=\"createprojForm.inputCompany.$error.minlength || createprojForm.inputCompany.$error.maxlength && (createprojForm.inputCompany.$dirty || createprojForm.inputCompany.$touched)\">Enter between 3 and 30 characters</span>\n                </div>\n            </div>\n\n            <!-- Money Goal input -->\n            <div class=\"form-group\">\n                <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Money Goal</label>\n                <div class=\"col-md-9\">\n                    <input required ng-model=\"$ctrl.createproj.inputGoal\" id=\"inputGoal\" name=\"inputGoal\" type=\"number\" placeholder=\"Your money goal\" class=\"form-control\" min=\"100\" max=\"500000\" ng-model-options=\"{  debounce: 500 }\">\n                    <span ng-show=\"createprojForm.inputGoal.$error.required && (createprojForm.inputGoal.$dirty || createprojForm.inputGoal.$touched)\">Enter a money goal</span>\n                    <span ng-show=\"createprojForm.inputGoal.$error.min || createprojForm.inputGoal.$error.max && (createprojForm.inputGoal.$dirty || createprojForm.inputGoal.$touched)\">Enter between 100 and 500000 euros</span>\n                </div>\n            </div>\n\n          <!-- Sector select -->\n          <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"subject\" style=\"max-width: 35%;\">Your Sector</label>\n            <div class=\"col-md-9\">\n                <select class=\"form-control\" ng-options=\"selectSector as selectSector for selectSector in $ctrl.selectSector track by selectSector\" ng-model=\"$ctrl.createproj.selectSector\" name=\"selectSector\">\n                  <option ng-show=\"$ctrl.showSector\" value=\"\" selected>-- Select your sector --</option>\n                </select>\n            </div>\n          </div>\n\n            <!-- Description body -->\n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"message\" style=\"max-width: 50%;\">Project Description</label>\n              <div class=\"col-md-9\">\n                <textarea style=\"resize: none;\" required ng-model=\"$ctrl.createproj.inputDesc\" name=\"inputDesc\" class=\"form-control\" rows=\"4\" cols=\"50\" id=\"inputDesc\" ng-minlength=\"100\" ng-maxlength=\"10000\" ng-model-options=\"{  debounce: 500 }\" placeholder=\"Please enter your message here...\"></textarea>\n                <span ng-show=\"createprojForm.inputDesc.$error.required && (createprojForm.inputDesc.$dirty || createprojForm.inputDesc.$touched)\">Enter a description</span>\n                <span ng-show=\"createprojForm.inputDesc.$error.minlength\">Enter more than 100 characters</span>\n                <span ng-show=\"createprojForm.inputDesc.$error.maxlength\">Enter less than 10000 characters</span>\n              </div>\n            </div>\n    \n            <!-- Form actions -->\n            <div class=\"form-group\">\n              <div class=\"col-md-12 text-right\">\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-show=\"createprojForm.inputNameproj.$valid && createprojForm.inputCompany.$valid && createprojForm.inputGoal.$valid && createprojForm.selectSector.$modelValue && createprojForm.inputDesc.$valid && $ctrl.showButton\"\n                    ng-click=\"$ctrl.messageCreateP()\"/>\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-hide=\"createprojForm.inputNameproj.$valid && createprojForm.inputCompany.$valid && createprojForm.inputGoal.$valid && createprojForm.selectSector.$modelValue && createprojForm.inputDesc.$valid\"\n                    ng-click=\"$ctrl.nvalidCreateP()\"/>\n              </div>\n            </div>\n          </fieldset>\n          </form>\n        </div>\n      </div>\n	</div>\n</div>\n\n<!-- Rewards content -->\n\n<form class=\"form-horizontal\" id=\"formReward\" name=\"formReward\">\n        <div class=\"form-group\">\n                <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Rewards</label><br />\n            <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Title Reward</label>\n            <div class=\"col-md-9\">\n                <input required ng-model=\"$ctrl.reward.inputTitle\" id=\"inputTitle\" name=\"inputTitle\" type=\"text\" placeholder=\"Title reward\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"30\" ng-model-options=\"{  debounce: 500 }\">\n                <span ng-show=\"formReward.inputTitle.$error.required && (formReward.inputTitle.$dirty || formReward.inputTitle.$touched)\">Enter a title</span>\n                <span ng-show=\"formReward.inputTitle.$error.minlength || formReward.inputTitle.$error.maxlength && (formReward.inputTitle.$dirty || formReward.inputTitle.$touched)\">Enter between 3 and 30 characters</span>\n            </div>\n        </div>\n\n        <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Money to pay</label>\n            <div class=\"col-md-9\">\n                <input required ng-model=\"$ctrl.reward.inputMoney\" id=\"inputMoney\" name=\"inputMoney\" type=\"number\" placeholder=\"Your money goal\" class=\"form-control\" min=\"1\" max=\"10000\" ng-model-options=\"{  debounce: 500 }\">\n                <span ng-show=\"formReward.inputMoney.$error.required && (formReward.inputMoney.$dirty || formReward.inputMoney.$touched)\">Enter money to pay</span>\n                <span ng-show=\"formReward.inputMoney.$error.min || formReward.inputMoney.$error.max && (formReward.inputMoney.$dirty || formReward.inputMoney.$touched)\">Enter between 1 and 10000 euros</span>\n            </div>\n        </div>\n\n        <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"message\" style=\"max-width: 50%;\">Reward Description</label>\n            <div class=\"col-md-9\">\n                <textarea style=\"resize: none;\" required ng-model=\"$ctrl.reward.inputRDesc\" name=\"inputRDesc\" class=\"form-control\" rows=\"4\" cols=\"50\" id=\"inputRDesc\" ng-minlength=\"20\" ng-maxlength=\"200\" ng-model-options=\"{  debounce: 500 }\" placeholder=\"Please enter your reward description...\"></textarea>\n                <span ng-show=\"formReward.inputRDesc.$error.required && (formReward.inputRDesc.$dirty || formReward.inputRDesc.$touched)\">Enter a description</span>\n                <span ng-show=\"formReward.inputRDesc.$error.minlength\">Enter more than 20 characters</span>\n                <span ng-show=\"formReward.inputRDesc.$error.maxlength\">Enter less than 200 characters</span>\n            </div>\n        </div>\n        <div class=\"form-group\">\n            <div class=\"col-md-12 text-right\">\n                    <input class=\"btn btn-primary\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Save\"\n                    ng-show=\"formReward.inputTitle.$valid && formReward.inputMoney.$valid && formReward.inputRDesc.$valid\"\n                    ng-click=\"$ctrl.saveReward()\"/>\n                    <input class=\"btn btn-primary\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Save\"\n                    ng-hide=\"formReward.inputTitle.$valid && formReward.inputMoney.$valid && formReward.inputRDesc.$valid\"\n                    ng-click=\"$ctrl.nvalidCreateP()\"/>\n            </div>\n        </div>\n    </form>\n");
+  $templateCache.put("projects/detailsproj.html", "<div class=\"container\">\n    <div class=\"row\">\n        <div class=\"col-lg-8\">\n            <br><br>\n            <h1 class=\"mt-4\">{{$ctrl.project.name}}</h1>\n            <p class=\"lead\">\n                by<a href=\"#\">{{$ctrl.project.company}}</a>\n            </p>\n            <hr>\n            <p>Posted on January 1, 2018 at 12:00 PM</p>\n            <hr>\n            <img class=\"img-fluid rounded\" src=\"http://placehold.it/900x300\" alt=\"\">\n            <hr>\n            <p class=\"lead\">{{$ctrl.project.desc}}</p>\n            <blockquote class=\"blockquote\">\n            <p class=\"mb-0\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n            Integer posuere erat a ante.</p>\n            \n            <footer class=\"blockquote-footer\">Someone famous in\n            <cite title=\"Source Title\">Source Title</cite>\n            </footer>\n            </blockquote>\n            <hr>\n            <!-- Comments Form -->\n            <div class=\"card my-4\">\n                <h5 class=\"card-header\">Leave a Comment:</h5>\n                <div class=\"card-body\">\n                    <form>\n                        <div class=\"form-group\">\n                            <textarea class=\"form-control\" rows=\"3\"></textarea>\n                        </div>\n                        <button type=\"submit\" class=\"btn btn-primary\">Submit</button>\n                    </form>\n                </div>\n            </div>\n        </div>\n        <br>\n        <!-- Sidebar Widgets Column -->\n        <div class=\"col-md-4\">\n            <br><br><br><br><br><br>\n            <div class=\"card my-4\">\n                <h5 class=\"card-header\">Search</h5>\n                <div class=\"card-body\">\n                    <div class=\"input-group\">\n                        <input type=\"text\" class=\"form-control\" placeholder=\"Search for...\">\n                        <span class=\"input-group-btn\">\n                            <button class=\"btn btn-secondary\" type=\"button\">Go!</button>\n                        </span>\n                    </div>\n                </div>\n            </div>\n            <div class=\"card my-4\">\n                <h5 class=\"card-header\">Money Goal</h5>\n                <div class=\"card-body\">\n                    <div class=\"row\">\n                        <div class=\"col-lg-6\">\n                            {{$ctrl.project.goal}}$\n                        </div>\n                        <div class=\"col-lg-6\">\n                        </div>\n                    </div>\n                </div>\n            </div>\n            <div class=\"card my-4\">\n                <h5 class=\"card-header\">Rewards</h5>\n                <div class=\"card-body\"></div>\n            </div>\n        </div>\n    </div>\n</div>");
+  $templateCache.put("projects/projects.html", "<!--<h1>Todos los projectos</h1>\n\n<button class=\"btn btn-primary btn-lg\" ui-sref=\"app.createproj\">Create project</button>\n<div style=\"text-align:center;\">\n    <div ng-repeat=\"proj in infoProj\" style=\"width:48%; display:inline-block; margin:1%;\">\n        <span>Name: {{proj.name}}</span><br />\n        <span>Goal: {{proj.goal}}</span><br />\n        <span>Description: {{proj.description}}</span><br />\n        <span>Owner: {{proj.owner}}</span>\n    </div>\n</div>-->\n<div class=\"container\"><br><br>\n    <h1 class=\"my-4\">Page Heading\n        <small>Secondary Text</small>\n    </h1><br>\n    <div class=\"col-md-4\">\n        <div class=\"card my-4\">\n            <h5 class=\"card-header\">Search</h5>\n            <div class=\"card-body\">\n                <div class=\"input-group\">\n                    <input type=\"text\" class=\"form-control\" placeholder=\"Search for...\">\n                    <span class=\"input-group-btn\">\n                        <button class=\"btn btn-secondary\" type=\"button\">Go!</button>\n                    </span>\n                </div>\n            </div>\n        </div>\n    </div><br><br><br>\n    <div class=\"container\">\n        <div class=\"row\">\n            <div class=\"col-sm-4\" ng-repeat=\"project in $ctrl.infoProj\">\n                <div class=\"panel panel-primary\">\n                    <div class=\"panel-heading\">{{project.name}}</div>\n                    <div class=\"panel-body\">\n                        <img src=\"https://placehold.it/150x80?text=IMAGE\"\n                        class=\"img-responsive\" style=\"width:100%\"\n                        ng-click=\"$ctrl.openDetails(project._id)\">\n                    </div>\n                    <div class=\"panel-footer\">{{project.desc}}</div><br>\n                </div><br>\n            </div><br>\n        </div>\n    </div><br><br>\n</div>");
   $templateCache.put("settings/settings.html", "<div class=\"settings-page\">\n  <div class=\"container page\">\n    <div class=\"row\">\n      <div class=\"col-md-6 offset-md-3 col-xs-12\">\n\n        <h1 class=\"text-xs-center\">Your Settings</h1>\n\n        <list-errors errors=\"$ctrl.errors\"></list-errors>\n\n        <form ng-submit=\"$ctrl.submitForm()\">\n          <fieldset ng-disabled=\"$ctrl.isSubmitting\">\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control\"\n                type=\"text\"\n                placeholder=\"URL of profile picture\"\n                ng-model=\"$ctrl.formData.image\" />\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control form-control-lg\"\n                type=\"text\"\n                placeholder=\"Username\"\n                ng-model=\"$ctrl.formData.username\" />\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <textarea class=\"form-control form-control-lg\"\n                rows=\"8\"\n                placeholder=\"Short bio about you\"\n                ng-model=\"$ctrl.formData.bio\">\n              </textarea>\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control form-control-lg\"\n                type=\"email\"\n                placeholder=\"Email\"\n                ng-model=\"$ctrl.formData.email\" />\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control form-control-lg\"\n                type=\"password\"\n                placeholder=\"New Password\"\n                ng-model=\"$ctrl.formData.password\" />\n            </fieldset>\n\n            <button class=\"btn btn-lg btn-primary pull-xs-right\"\n              type=\"submit\">\n              Update Settings\n            </button>\n\n          </fieldset>\n        </form>\n\n        <!-- Line break for logout button -->\n        <hr />\n\n        <button class=\"btn btn-outline-danger\"\n          ng-click=\"$ctrl.logout()\">\n          Or click here to logout.\n        </button>\n\n      </div>\n    </div>\n  </div>\n</div>\n");
   $templateCache.put("components/article-helpers/article-list.html", "<article-preview\n  article=\"article\"\n  ng-repeat=\"article in $ctrl.list\">\n</article-preview>\n\n<div class=\"article-preview\"\n  ng-hide=\"!$ctrl.loading\">\n  Loading articles...\n</div>\n\n<div class=\"article-preview\"\n  ng-show=\"!$ctrl.loading && !$ctrl.list.length\">\n  No articles are here... yet.\n</div>\n\n<list-pagination\n total-pages=\"$ctrl.listConfig.totalPages\"\n current-page=\"$ctrl.listConfig.currentPage\"\n ng-hide=\"$ctrl.listConfig.totalPages <= 1\">\n</list-pagination>\n");
   $templateCache.put("components/article-helpers/article-meta.html", "<div class=\"article-meta\">\n  <a ui-sref=\"app.profile.main({ username:$ctrl.article.author.username })\">\n    <img ng-src=\"{{$ctrl.article.author.image}}\" />\n  </a>\n\n  <div class=\"info\">\n    <a class=\"author\"\n      ui-sref=\"app.profile.main({ username:$ctrl.article.author.username })\"\n      ng-bind=\"$ctrl.article.author.username\">\n    </a>\n    <span class=\"date\"\n      ng-bind=\"$ctrl.article.createdAt | date: \'longDate\' \">\n    </span>\n  </div>\n\n  <ng-transclude></ng-transclude>\n</div>\n");
@@ -43862,42 +43863,48 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var ContactCtrl = function ContactCtrl($scope, Contact, Toastr) {
+var ContactCtrl = function ContactCtrl(Contact, Toastr, $timeout, $state) {
 	'ngInject';
 
 	_classCallCheck(this, ContactCtrl);
 
-	$scope.infoSelect = ["No puedo pagar", "No puedo crear un proyecto", "No me deja registrarme", "Problemas con la contraseña"];
-	$scope.showSubject = false;
+	this.infoSelect = ["No puedo pagar", "No puedo crear un proyecto", "No me deja registrarme", "Problemas con la contraseña"];
+	this.showSubject = false;
+	this.showButton = true;
 
-	$scope.nvalidContact = function () {
+	this.nvalidContact = function () {
 		Toastr.showToastr('error', 'Rellena todos los campos del formulario');
 	};
 
-	$scope.messageContact = function () {
+	this.messageContact = function () {
+		this.showButton = false;
 		var data = {
-			name: $scope.contact.inputName,
+			name: this.contact.inputName,
 			from: 'crowcode@gmail.com',
 			type: 'user',
-			subject: $scope.contact.inputSubject,
-			to: $scope.contact.inputMail,
-			text: $scope.contact.inputMessage
+			subject: this.contact.inputSubject,
+			to: this.contact.inputMail,
+			text: this.contact.inputMessage
 		};
 		Contact.sendEmail(data).then(function (response) {
 			if (response) {
 				Toastr.showToastr('success', 'Correo enviado correctamente');
+				$timeout(function () {
+					$state.go('app.home');
+				}, 4000);
 			} else {
+				this.showButton = true;
 				Toastr.showToastr('error', 'Error al enviar el correo');
 			}
 		});
 
 		var data = {
-			name: $scope.contact.inputName,
+			name: this.contact.inputName,
 			from: 'crowcode@gmail.com',
 			type: 'admin',
-			subject: $scope.contact.inputSubject,
+			subject: this.contact.inputSubject,
 			to: 'daniortizgar@gmail.com',
-			text: $scope.contact.inputMessage
+			text: this.contact.inputMessage
 		};
 		Contact.sendEmail(data).then(function (response) {
 			/*if(response){
@@ -43908,7 +43915,7 @@ var ContactCtrl = function ContactCtrl($scope, Contact, Toastr) {
 		});
 	};
 };
-ContactCtrl.$inject = ["$scope", "Contact", "Toastr"];
+ContactCtrl.$inject = ["Contact", "Toastr", "$timeout", "$state"];
 
 exports.default = ContactCtrl;
 
@@ -44443,30 +44450,74 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var CreateprojCtrl = function CreateprojCtrl($scope, Toastr) {
+var CreateprojCtrl = function CreateprojCtrl(Projects, Toastr, $timeout, $state) {
     'ngInject';
 
     _classCallCheck(this, CreateprojCtrl);
 
     var rewards = [];
-    $scope.showSector = false;
-    $scope.selectSector = ["Web app", "Mobile app", "Desktop app", "Videogames"];
-    $scope.nvalidCreateP = function () {
+    this.showSector = false;
+    this.showButton = true;
+    this.selectSector = ["Web app", "Mobile app", "Desktop app", "Videogames"];
+    this.nvalidCreateP = function () {
         Toastr.showToastr('error', 'Rellena todos los campos del formulario');
     };
-    $scope.saveReward = function () {
-        rewards.push({ _id: Math.round(Math.random() * 1000000) * Math.round(Math.random() * 1000000), title: $scope.reward.inputTitle, money: $scope.reward.inputMoney, desc: $scope.reward.inputRDesc });
-        console.log(rewards);
+    this.saveReward = function () {
+        rewards.push({ _id: Math.round(Math.random() * 1000000) * Math.round(Math.random() * 1000000), title: this.reward.inputTitle, money: this.reward.inputMoney, desc: this.reward.inputRDesc });
     };
-    $scope.messageCreateP = function () {
-        console.log($scope.createproj.inputNameproj + "/-/" + $scope.createproj.inputCompany + "/-/" + $scope.createproj.inputGoal + "/-/" + $scope.createproj.selectSector + "/-/" + $scope.createproj.inputDesc);
+    this.messageCreateP = function () {
+        if (rewards.length < 3) {
+            Toastr.showToastr('error', 'Tiene que tener mas de 2 Rewards');
+        } else {
+            this.showButton = false;
+            var data = {
+                name: this.createproj.inputNameproj,
+                company: this.createproj.inputCompany,
+                goal: this.createproj.inputGoal,
+                sector: this.createproj.selectSector,
+                rewards: rewards,
+                desc: this.createproj.inputDesc
+            };
+            Projects.setProjects(data).then(function (response) {
+                if (response.data) {
+                    Toastr.showToastr('success', 'Projecto guardado correctamente');
+                    $timeout(function () {
+                        $state.go('app.home');
+                    }, 4000);
+                } else {
+                    Toastr.showToastr('error', 'Error al guardar el projecto');
+                }
+            });
+        }
     };
 };
-CreateprojCtrl.$inject = ["$scope", "Toastr"];
+CreateprojCtrl.$inject = ["Projects", "Toastr", "$timeout", "$state"];
 
 exports.default = CreateprojCtrl;
 
 },{}],47:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var DetailsProjectCtrl = function DetailsProjectCtrl(project) {
+    'ngInject';
+
+    _classCallCheck(this, DetailsProjectCtrl);
+
+    console.log("hola");
+    this.project = project;
+    console.log(project);
+};
+DetailsProjectCtrl.$inject = ["project"];
+
+exports.default = DetailsProjectCtrl;
+
+},{}],48:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44489,6 +44540,10 @@ var _createproj = require('./createproj.controller');
 
 var _createproj2 = _interopRequireDefault(_createproj);
 
+var _detailsproj = require('./detailsproj.controller');
+
+var _detailsproj2 = _interopRequireDefault(_detailsproj);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var projectsModule = angular.module('app.projects', []);
@@ -44499,9 +44554,11 @@ projectsModule.controller('ProjectsCtrl', _projects4.default);
 
 projectsModule.controller('CreateprojCtrl', _createproj2.default);
 
+projectsModule.controller('DetailsProjectCtrl', _detailsproj2.default);
+
 exports.default = projectsModule;
 
-},{"./createproj.controller":46,"./projects.config":48,"./projects.controller":49,"angular":5}],48:[function(require,module,exports){
+},{"./createproj.controller":46,"./detailsproj.controller":47,"./projects.config":49,"./projects.controller":50,"angular":5}],49:[function(require,module,exports){
 'use strict';
 
 ProjectsConfig.$inject = ["$stateProvider"];
@@ -44530,13 +44587,26 @@ function ProjectsConfig($stateProvider) {
     controllerAs: '$ctrl',
     templateUrl: 'projects/createproj.html',
     title: 'Createproj'
+  }).state('app.detailsproject', {
+    url: '/projects/:id',
+    controller: 'DetailsProjectCtrl',
+    controllerAs: '$ctrl',
+    templateUrl: 'projects/detailsproj.html',
+    title: 'Details Project',
+    resolve: {
+      project: ["Projects", "$stateParams", function project(Projects, $stateParams) {
+        return Projects.getProject($stateParams.id).then(function (Projects) {
+          return Projects;
+        });
+      }]
+    }
   });
 };
 
 exports.default = ProjectsConfig;
 
-},{}],49:[function(require,module,exports){
-"use strict";
+},{}],50:[function(require,module,exports){
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
@@ -44544,26 +44614,27 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var ProjectsCtrl = function ProjectsCtrl($scope, projects, $state) {
+var ProjectsCtrl = function ProjectsCtrl(projects, $state) {
     'ngInject';
 
     _classCallCheck(this, ProjectsCtrl);
 
+    console.log(projects);
     if (projects) {
-        $scope.infoProj = projects;
+        this.infoProj = projects;
     } else {
-        $scope.infoProj = "error";
+        this.infoProj = "error";
     }
 
-    /*$scope.openCreate = function(){
-        $state.go('app.createproj');
-    }*/
+    this.openDetails = function (ID) {
+        $state.go('app.detailsproject', { id: ID });
+    };
 };
-ProjectsCtrl.$inject = ["$scope", "projects", "$state"];
+ProjectsCtrl.$inject = ["projects", "$state"];
 
 exports.default = ProjectsCtrl;
 
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44680,7 +44751,7 @@ var Articles = function () {
 
 exports.default = Articles;
 
-},{}],51:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44741,7 +44812,7 @@ var Comments = function () {
 
 exports.default = Comments;
 
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44785,7 +44856,7 @@ var Contact = function () {
 
 exports.default = Contact;
 
-},{}],53:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44857,7 +44928,7 @@ servicesModule.service('Toastr', _toastr2.default);
 
 exports.default = servicesModule;
 
-},{"./articles.service":50,"./comments.service":51,"./contact.service":52,"./jwt.service":54,"./profile.service":55,"./projects.service":56,"./tags.service":57,"./toastr.service":58,"./user.service":59,"angular":5}],54:[function(require,module,exports){
+},{"./articles.service":51,"./comments.service":52,"./contact.service":53,"./jwt.service":55,"./profile.service":56,"./projects.service":57,"./tags.service":58,"./toastr.service":59,"./user.service":60,"angular":5}],55:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44901,7 +44972,7 @@ var JWT = function () {
 
 exports.default = JWT;
 
-},{}],55:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44960,7 +45031,7 @@ var Profile = function () {
 
 exports.default = Profile;
 
-},{}],56:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44986,9 +45057,27 @@ var Projects = function () {
     _createClass(Projects, [{
         key: 'getProjects',
         value: function getProjects() {
-            var deferred = this._$q.defer();
             return this._$http({
                 url: this._AppConstants.api + '/projects',
+                method: 'GET'
+            }).then(function (res) {
+                return res.data.projects;
+            });
+        }
+    }, {
+        key: 'setProjects',
+        value: function setProjects(project) {
+            return this._$http({
+                url: this._AppConstants.api + '/projects',
+                method: 'POST',
+                data: project
+            });
+        }
+    }, {
+        key: 'getProject',
+        value: function getProject(id) {
+            return this._$http({
+                url: this._AppConstants.api + '/projects/' + id,
                 method: 'GET'
             }).then(function (res) {
                 return res.data.projects;
@@ -45001,7 +45090,7 @@ var Projects = function () {
 
 exports.default = Projects;
 
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -45041,7 +45130,7 @@ var Tags = function () {
 
 exports.default = Tags;
 
-},{}],58:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -45089,7 +45178,7 @@ var Toastr = function () {
 
 exports.default = Toastr;
 
-},{}],59:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -45214,7 +45303,7 @@ var User = function () {
 
 exports.default = User;
 
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -45247,7 +45336,7 @@ settingsModule.controller('SettingsCtrl', _settings4.default);
 
 exports.default = settingsModule;
 
-},{"./settings.config":61,"./settings.controller":62,"angular":5}],61:[function(require,module,exports){
+},{"./settings.config":62,"./settings.controller":63,"angular":5}],62:[function(require,module,exports){
 'use strict';
 
 SettingsConfig.$inject = ["$stateProvider"];
@@ -45273,7 +45362,7 @@ function SettingsConfig($stateProvider) {
 
 exports.default = SettingsConfig;
 
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {

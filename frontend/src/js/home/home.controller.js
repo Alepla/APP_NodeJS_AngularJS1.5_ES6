@@ -1,32 +1,23 @@
 class HomeCtrl {
-  constructor(User, Tags, AppConstants, $scope) {
+  constructor(AppConstants, $scope,sectors) {
     'ngInject';
-
+ 
+    console.log(sectors);
     this.appName = AppConstants.appName;
     this._$scope = $scope;
-
-    // Get list of all tags
-    Tags
-      .getAll()
-      .then(
-        (tags) => {
-          this.tagsLoaded = true;
-          this.tags = tags
-        }
-      );
-
-    // Set current list to either feed or all, depending on auth status.
-    this.listConfig = {
-      type: User.current ? 'feed' : 'all'
-    };
-
+ 
+    if (sectors){
+      this.infoSect = sectors;
+    }else{
+      this.infoSect = "Error";
+    }
+   
   }
-
-  changeList(newList) {
-    this._$scope.$broadcast('setListTo', newList);
-  }
-
-
-}
-
-export default HomeCtrl;
+ 
+ 
+ }
+ 
+ export default HomeCtrl;
+ 
+ 
+ 

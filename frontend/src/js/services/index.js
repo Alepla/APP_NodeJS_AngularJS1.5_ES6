@@ -19,8 +19,8 @@ servicesModule.service('Articles', ArticlesService);
 import CommentsService from './comments.service';
 servicesModule.service('Comments', CommentsService);
 
-import TagsService from './tags.service';
-servicesModule.service('Tags', TagsService);
+import SectorsService from './sectors.service';
+servicesModule.service('Sectors', SectorsService);
 
 import ContactService from './contact.service';
 servicesModule.service('Contact', ContactService);

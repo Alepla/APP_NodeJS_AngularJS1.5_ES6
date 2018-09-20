@@ -3,7 +3,7 @@ function ProjectsConfig($stateProvider) {
     
     $stateProvider
     .state('app.projects', {
-      url: '/projects',
+      url: '/projects-:filter',
       controller: 'ProjectsCtrl',
       controllerAs: '$ctrl',
       templateUrl: 'projects/projects.html',

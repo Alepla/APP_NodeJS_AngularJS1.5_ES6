@@ -1,21 +1,18 @@
-export default class Tags {
+export default class Sectors {
   constructor(JWT, AppConstants, $http, $q) {
     'ngInject';
-
+ 
     this._AppConstants = AppConstants;
     this._$http = $http;
-
-
+ 
+ 
   }
-
-  getAll() {
-
+ 
+  getSectors() {
     return this._$http({
-      url: this._AppConstants.api + '/tags',
+      url: this._AppConstants.api + '/sectors',
       method: 'GET',
-    }).then((res) => res.data.tags);
-
+    }).then((res) => res.data.sectors);
   }
-
-
-}
+ 
+} 

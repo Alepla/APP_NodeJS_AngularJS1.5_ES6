@@ -2,37 +2,27 @@
     <div class="row">
         <div class="col-lg-8">
             <br><br>
-            <h1 class="mt-4">{{$ctrl.project.name}}</h1>
+            <h1 class="mt-4">{{$ctrl.infoProj.name}}</h1>
             <p class="lead">
-                by<a href="#">{{$ctrl.project.company}}</a>
+                by<a href="#">{{$ctrl.infoProj.company}}</a>
             </p>
             <hr>
             <p>Posted on January 1, 2018 at 12:00 PM</p>
             <hr>
             <img class="img-fluid rounded" src="http://placehold.it/900x300" alt="">
             <hr>
-            <p class="lead">{{$ctrl.project.desc}}</p>
+            <p class="lead">{{$ctrl.infoProj.desc}}</p>
             <blockquote class="blockquote">
             <p class="mb-0">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
             Integer posuere erat a ante.</p>
             
-            <footer class="blockquote-footer">Someone famous in
-            <cite title="Source Title">Source Title</cite>
+            <footer class="blockquote-footer">{{$ctrl.infoProj.company}} in
+            <cite title="Source Title">{{$ctrl.infoProj.name}}</cite>
             </footer>
             </blockquote>
             <hr>
             <!-- Comments Form -->
-            <div class="card my-4">
-                <h5 class="card-header">Leave a Comment:</h5>
-                <div class="card-body">
-                    <form>
-                        <div class="form-group">
-                            <textarea class="form-control" rows="3"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                    </form>
-                </div>
-            </div>
+
         </div>
         <br>
         <!-- Sidebar Widgets Column -->
@@ -53,17 +43,23 @@
                 <h5 class="card-header">Money Goal</h5>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-lg-6">
-                            {{$ctrl.project.goal}}$
+                        <div class="col-lg-2">
+                            00$
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-7">
+                            <div class="progress">
+                                <progress class="progress-bar" style="width: 100%" value="500" max="{{$ctrl.infoProj.goal}}"></progress>
+                            </div>
+                        </div>
+                        <div class="col-lg-2">
+                            {{$ctrl.infoProj.goal}}$
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="card my-4">
-                <h5 class="card-header">Rewards</h5>
-                <div class="card-body"></div>
+            <div class="card my-4" ng-repeat="project in $ctrl.rewardProj">
+                <h5 class="card-header">Reward</h5>
+                <div class="card-body">{{project}}</div>
             </div>
         </div>
     </div>

@@ -3,7 +3,8 @@ class ProjectsCtrl {
         'ngInject';
 
         this._$scope = $scope;
-        $scope.projects = projects;
+        this.itemsPerPage = 3;
+        this.currentPage = 1;
 
         if(projects){
             if($stateParams.filter){
@@ -12,15 +13,24 @@ class ProjectsCtrl {
             }else{
                 this.infoProj = projects;
             }
+            this.infoPager = this.infoProj;
+            this.sdataProj = this.infoProj;
         }else{
             this.infoProj = "error";
         }
- 
- 
 
         this._$scope.openDetails = function(){
             $state.go('app.detailsproject', { id: this.project['_id'] });
         };
+
+        this.changePage = function(){
+            var begin = (this.currentPage - 1) * this.itemsPerPage;
+            var end = begin + this.itemsPerPage;
+            this.infoProj = this.sdataProj.slice(begin, end);
+        }
+        this.changeSearch = function(){
+            this.infoPager = $filter('filter')(this.sdataProj,{name:this.search.name});
+        }
 
         
     }

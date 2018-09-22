@@ -1,49 +1,36 @@
-<!--<h1>Todos los projectos</h1>
-
 <button class="btn btn-primary btn-lg" ui-sref="app.createproj">Create project</button>
-<div style="text-align:center;">
-    <div ng-repeat="proj in infoProj" style="width:48%; display:inline-block; margin:1%;">
-        <span>Name: {{proj.name}}</span><br />
-        <span>Goal: {{proj.goal}}</span><br />
-        <span>Description: {{proj.description}}</span><br />
-        <span>Owner: {{proj.owner}}</span>
-    </div>
-</div>-->
-<div class="container"><br><br>
-    <h1 class="my-4">Page Heading
-        <small>Secondary Text</small>
-    </h1><br>
-    <div class="col-md-4">
-        <div class="card my-4">
-            <h5 class="card-header">Search</h5>
-            <div class="card-body">
-                <div class="input-group">
-                    <!--<form class="form-search">
-                        <input type="text" ng-model="selectedAlbums" placeholder="Search Albums" 
-                        uib-typeahead="c as project.name for project in $ctrl.infoProj | filter:$viewValue | limitTo:5" typeahead-min-length='1' 
-                        typeahead-on-select='onSelectPart($item, $model, $label)' class="form-control" style="max-width:600px;"/>
-                        <button ng-click="SelectedItem()"><a ng-click="SelectedItem()" class="glyphicon glyphicon-search"></a></button>
-                    </form>-->
-                    <div>
-                        <input type="text" ui-autocomplete="autocompleteOptions">
-                    </div>
-                </div>
+<h1 class="my-4">Projects</h1><br>
+<div class="col-md-4">
+    <div class="card my-4">
+        <h5 class="card-header">Search</h5>
+        <div class="card-body">
+            <div class="input-group">
+                <form class="form-search">
+                    <input type="text" ng-model="$ctrl.search.name" ng-change="$ctrl.changeSearch()" placeholder="Search projects" 
+                    uib-typeahead="project.name for project in $ctrl.infoProj | filter:{name:$viewValue} | limitTo:5" class="form-control">
+                </form>
             </div>
         </div>
-    </div><br><br><br>
+    </div>
+</div><br><br><br><br><br><br>
+<div class="container"><br><br>
     <div class="container">
         <div class="row">
-            <div class="col-sm-4" ng-repeat="project in $ctrl.infoProj">
+            <div class="col-sm-4" ng-repeat="project in $ctrl.infoProj | filter:$ctrl.search:strict | limitTo:$ctrl.itemsPerPage">
                 <div class="panel panel-primary">
                     <div class="panel-heading">{{project.name}}</div>
-                    <div class="panel-body">
+                    <div class="panel-body" style="padding:0px;">
                         <img src="https://placehold.it/150x80?text=IMAGE"
                         class="img-responsive" style="width:100%" id="{{project._id}}"
                         ng-click="openDetails()">
                     </div>
-                    <div class="panel-footer">{{project.desc}}</div><br>
+                    <div class="panel-footer">{{project.desc}}<br></div>
                 </div><br>
             </div><br>
         </div>
     </div><br><br>
 </div>
+<ul uib-pagination class="pagination-sm" boundary-link-numbers="true"
+    total-items="$ctrl.infoPager.length" ng-model="$ctrl.currentPage"
+    items-per-page="$ctrl.itemsPerPage" ng-change="$ctrl.changePage()">
+</ul>

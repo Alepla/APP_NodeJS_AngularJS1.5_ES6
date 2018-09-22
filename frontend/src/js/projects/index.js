@@ -11,6 +11,9 @@ projectsModule.controller('ProjectsCtrl', ProjectsCtrl);
 import CreateprojCtrl from './createproj.controller';
 projectsModule.controller('CreateprojCtrl', CreateprojCtrl);
 
+import UpdateprojCtrl from './updateproj.controller';
+projectsModule.controller('UpdateprojCtrl', UpdateprojCtrl);
+
 import DetailsProjectCtrl from './detailsproj.controller';
 projectsModule.controller('DetailsProjectCtrl', DetailsProjectCtrl);
 

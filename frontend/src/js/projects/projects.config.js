@@ -23,6 +23,13 @@ function ProjectsConfig($stateProvider) {
       templateUrl: 'projects/createproj.html',
       title: 'Createproj'
     })
+    .state('app.updateproj', {
+      url: '/updateproj',
+      controller: 'UpdateprojCtrl',
+      controllerAs: '$ctrl',
+      templateUrl: 'projects/updateproj.html',
+      title: 'Updateproj'
+    })
     .state('app.detailsproject', {
       url: '/projects/:id',
       controller: 'DetailsProjectCtrl',

@@ -1,20 +1,21 @@
 class HomeCtrl {
-  constructor(AppConstants, $scope,sectors) {
+  constructor(AppConstants, $scope, sectors) {
     'ngInject';
  
     console.log(sectors);
     this.appName = AppConstants.appName;
     this._$scope = $scope;
- 
+
     if (sectors){
-      this.infoSect = sectors;
+      $scope.infoSect = sectors.slice(0, 3);
     }else{
-      this.infoSect = "Error";
+      $scope.infoSect = "Error";
     }
-   
+
+    $scope.load = function () {
+        $scope.infoSect = sectors.slice(0, sectors.length + 3);
+    }
   }
- 
- 
  }
  
  export default HomeCtrl;

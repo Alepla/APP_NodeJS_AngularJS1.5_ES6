@@ -9,10 +9,19 @@
   </div>
 
   <h1 class="my-4">Most popular categories</h1><br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
 
  <div class="container">
-     <div class="row">
-         <div class="col-sm-4" ng-repeat="sector in $ctrl.infoSect">
+     <div class="row" infinite-scroll="load()" infinite-scroll-distance='0' infinite-scroll-immediate-check='false'>
+         <div class="col-sm-4" ng-repeat="sector in infoSect">
              <div class="panel panel-primary">
                  <div class="panel-heading">{{sector}}</div>
                  <div class="panel-body">
@@ -25,5 +34,8 @@
      </div>
  </div><br><br>
 </div>
+<!--<div infinite-scroll="loadMore()" infinite-scroll-distance="3">
+    <img ng-repeat='sector in $ctrl.infoSect' src="https://placehold.it/150x80?text=IMAGE">
+</div>
 
-
+-->

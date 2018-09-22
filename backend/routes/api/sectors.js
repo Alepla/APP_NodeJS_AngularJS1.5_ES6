@@ -11,3 +11,4 @@ router.get('/', function(req, res, next) {
 
 module.exports = router;
 
+//db.projects.aggregate({$project:{sector:1}},{$group:{_id:"$sector","count":{$sum:1}}},{$sort:{count:-1,_id:1}})

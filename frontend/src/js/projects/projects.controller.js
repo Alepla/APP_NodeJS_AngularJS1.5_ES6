@@ -8,10 +8,12 @@ class ProjectsCtrl {
 
         if(projects){
             if($stateParams.filter){
+                this.showFilter = true;
                 this.filter = $stateParams.filter;
                 this.infoProj = $filter('filter')(projects,this.filter);
             }else{
                 this.infoProj = projects;
+                this.showFilter = false;
             }
             this.infoPager = this.infoProj;
             this.sdataProj = this.infoProj;
@@ -35,6 +37,13 @@ class ProjectsCtrl {
         this._$scope.updateInfo = function(){
             $state.go('app.updateproj', { id: this.project['_id'] });
         };
+
+        this.clearFilter = function(){
+            this.showFilter = false;
+            this.infoProj = projects;
+            this.infoPager = projects;
+            this.sdataProj = projects;
+        }
 
         
     }

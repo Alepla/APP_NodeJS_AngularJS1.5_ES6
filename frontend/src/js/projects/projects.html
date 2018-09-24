@@ -1,5 +1,4 @@
 <button class="btn btn-primary btn-lg" ui-sref="app.createproj">Create project</button>
-<button class="btn btn-primary btn-lg" ui-sref="app.updateproj">Update project</button>
 <h1 class="my-4">Projects</h1><br>
 <div class="col-md-4">
     <div class="card my-4">
@@ -26,6 +25,7 @@
                         ng-click="openDetails()">
                     </div>
                     <div class="panel-footer">{{project.desc}}<br></div>
+                    <button class="btn btn-primary btn-lg" ng-click="updateInfo()">Update project</button>
                 </div><br>
             </div><br>
         </div>

@@ -23,6 +23,13 @@ export default class Projects {
             data:project
         })
     }
+    updateProject(project){
+        return this._$http({
+            url: `${this._AppConstants.api}/projects`,
+            method: 'PUT',
+            data:project
+        })
+    }
 
     getProject(id) {
         return this._$http({

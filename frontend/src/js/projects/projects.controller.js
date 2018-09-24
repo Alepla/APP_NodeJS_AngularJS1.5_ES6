@@ -32,6 +32,10 @@ class ProjectsCtrl {
             this.infoPager = $filter('filter')(this.sdataProj,{name:this.search.name});
         }
 
+        this._$scope.updateInfo = function(){
+            $state.go('app.updateproj', { id: this.project['_id'] });
+        };
+
         
     }
 }

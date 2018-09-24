@@ -26,7 +26,10 @@ import ContactService from './contact.service';
 servicesModule.service('Contact', ContactService);
 
 import ProjectsService from './projects.service';
-servicesModule.service('Projects', ProjectsService)
+servicesModule.service('Projects', ProjectsService);
+
+import AdminpanelService from './adminpanel.service';
+servicesModule.service('Adminpanel', AdminpanelService)
 
 import ToastrService from './toastr.service';
 servicesModule.service('Toastr', ToastrService);

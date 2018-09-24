@@ -21,6 +21,18 @@ router.post('/', function(req, res, next) {
             });
 });
 
+router.put('/', function(req, res, next) {
+    console.log(req.body);
+    Projects.update({name:req.body.name,company:req.body.company,goal:req.body.goal,sector:req.body.sector,rewards:req.body.rewards,desc:req.body.desc},
+            function(err, project){
+                if(err){
+                    res.send(false);
+                }else{
+                    res.send(true);
+                }
+            });
+});
+
 router.get('/:id', function(req, res, next) {
     Projects.findById(req.params.id).then(function(projects){
     if(!projects){ return res.sendStatus(401); }

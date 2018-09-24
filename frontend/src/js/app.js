@@ -24,6 +24,7 @@ import './editor';
 import './contact';
 import './projects';
 import './login';
+import './adminpanel';
 
 
 // Create and bootstrap application
@@ -43,6 +44,7 @@ const requires = [
   'app.contact',
   'app.projects',
   'app.signin',
+  'app.adminpanel',
   toastr
 ];
 

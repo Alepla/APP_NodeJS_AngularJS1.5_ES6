@@ -1,0 +1,38 @@
+<div class="table table-data clear-both" data-ng-show="viewState === possibleStates[0]">
+    <table id="user_table" class="users list dtable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Project Name</th>
+                <th>Company Name</th>
+                <th>Money Goal</th>
+                <th>Sector</th>
+                <th class="blank-cell"></th>
+                <th class="blank-cell"></th>
+                <th class="blank-cell"></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr data-ng-repeat="project in $ctrl.infoProject | limitTo:$ctrl.itemsPerPage">
+                <td>{{ project._id }}</td>
+                <td>{{ project.name }}</td>
+                <td>{{ project.company }}</td>
+                <td>{{ project.goal }}</td>
+                <td>{{ project.sector }}</td>
+                <td class="users controls blank-cell">
+                    <a class="btn pointer" data-ng-click="showListProject()"><i class="ion-ios-eye"></i></a>
+                </td>
+                <td class="users controls blank-cell">
+                    <a class="btn pointer" data-ng-click="showEditProject()"><i class="ion-android-color-palette"></i></a>
+                </td>
+                <td class="users controls blank-cell">
+                    <a class="btn pointer" data-ng-click="showDeleteProject()"><i class="ion-ios-trash"></i></a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <ul uib-pagination class="pagination-sm" boundary-link-numbers="true"
+        total-items="$ctrl.infoPager.length" ng-model="$ctrl.currentPage"
+        items-per-page="$ctrl.itemsPerPage" ng-change="$ctrl.changePage()">
+    </ul>
+</div>

@@ -3,18 +3,28 @@ class UpdateprojCtrl {
         'ngInject';
         this._$scope = $scope;
         this.showButton = true;
+        this.showButtonCancel = false;
+        this.showButtonAdd = true;
         this.newReward = true;
         this.selectSector = ["Web app","Mobile app","Desktop app","Videogames"];
         this.infoProj = project;
         this.rewards = project.rewards;
 
         this.AddNew = function() {
+            this.showButtonCancel = true;
+            this.showButtonAdd = false;
             this.newReward = false;
             this.reward = {
                 inputNewTitle: '',
                 inputNewMoney: '',
                 inputNewRDesc: ''
               }
+        };
+
+        this.Cancel = function() {
+            this.showButtonAdd = true;
+            this.showButtonCancel = false;
+            this.newReward = true;
         };
 
         this.nvalidUpdate = function() {

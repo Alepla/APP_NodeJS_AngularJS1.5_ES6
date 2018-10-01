@@ -5,61 +5,101 @@
     <div class="container">
       <div class="row">
         <div class="col-xs-12 col-md-10 offset-md-1">
-
+ 
           <img ng-src="{{::$ctrl.profile.image}}" class="user-img" />
           <h4 ng-bind="::$ctrl.profile.username"></h4>
           <p ng-bind="::$ctrl.profile.bio"></p>
-
+ 
           <a ui-sref="app.settings"
             class="btn btn-sm btn-outline-secondary action-btn"
             ng-show="$ctrl.isUser">
             <i class="ion-gear-a"></i> Edit Profile Settings
           </a>
-
+          
+          <button class="btn btn-sm btn-outline-secondary action-btn" ng-click="$ctrl.logOut()" style="margin-left:2%;">Log out</button>
           <follow-btn user="$ctrl.profile" ng-hide="$ctrl.isUser"></follow-btn>
-
+ 
         </div>
       </div>
     </div>
   </div>
-
+ 
   <!-- Container where User's posts & favs are list w/ toggle tabs -->
   <div class="container">
     <div class="row">
-
+ 
       <div class="col-xs-12 col-md-10 offset-md-1">
-
+ 
         <!-- Tabs for switching between author articles & favorites -->
         <div class="articles-toggle">
           <ul class="nav nav-pills outline-active">
-
-            <li class="nav-item">
-              <a class="nav-link active"
-                ui-sref-active="active"
-                ui-sref="app.profile.main({username: $ctrl.profile.username})">
-                My Articles
-              </a>
-            </li>
-
+ 
             <li class="nav-item">
               <a class="nav-link"
-                ui-sref-active="active"
-                ui-sref="app.profile.favorites({username: $ctrl.profile.username})">
+                ng-click="$ctrl.seePersonalProjects()"
+                style="cursor: pointer;">
+                My Projects
+              </a>
+            </li>
+           
+            <li class="nav-item">
+              <a class="nav-link"
+                ng-click="$ctrl.seeInvertedProjects()"
+                style="cursor: pointer;">
                 Favorited Articles
               </a>
             </li>
-
+ 
           </ul>
         </div>
-
-        <!-- List of articles -->
-        <div ui-view></div>
-
-
+ 
       </div>
-
+ 
     <!-- End row & container divs -->
     </div>
   </div>
-
-</div>
+  <div class="container" ng-repeat="project in $ctrl.myProjects" ng-show="$ctrl.personalProjects">
+      <div class="row">
+      <div class="well">
+        <h1 class="text-center">{{project.name}}</h1>
+        <div class="list-group">
+          <div class="media col-md-3">
+              <figure class="pull-left">
+                  <img class="media-object img-rounded img-responsive" src="http://placehold.it/350x250" alt="placehold.it/350x250" >
+              </figure>
+          </div>
+          <div class="col-md-6">
+              <h4 class="list-group-item-heading"> {{project.company}} </h4>
+              <p class="list-group-item-text">{{project.desc}}</p>
+          </div>
+          <div class="col-md-3 text-center">
+              <button type="button" class="btn btn-primary btn-lg btn-block">See</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <div class="container" ng-repeat="project in $ctrl.myProjects" ng-show="$ctrl.invertedProjects">
+      <div class="row">
+      <div class="well">
+        <h1 class="text-center">Hola</h1>
+        <div class="list-group">
+          <div class="media col-md-3">
+              <figure class="pull-left">
+                  <img class="media-object img-rounded img-responsive" src="http://placehold.it/350x250" alt="placehold.it/350x250" >
+              </figure>
+          </div>
+          <div class="col-md-6">
+              <h4 class="list-group-item-heading"> {{project.company}} </h4>
+              <p class="list-group-item-text">{{project.desc}}</p>
+          </div>
+          <div class="col-md-3 text-center">
+              <button type="button" class="btn btn-primary btn-lg btn-block">See</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+ </div>

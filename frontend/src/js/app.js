@@ -23,7 +23,6 @@ import './settings';
 import './editor';
 import './contact';
 import './projects';
-import './login';
 import './adminpanel';
 
 
@@ -43,7 +42,6 @@ const requires = [
   'app.editor',
   'app.contact',
   'app.projects',
-  'app.signin',
   'app.adminpanel',
   toastr
 ];

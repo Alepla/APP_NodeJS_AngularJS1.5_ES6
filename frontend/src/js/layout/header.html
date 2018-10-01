@@ -33,36 +33,11 @@
           <i class="ion-ios-briefcase"></i>&nbsp;Projects
         </a>
       </li>
-
-      <li class="nav-item">
-        <a class="nav-link"
-          ui-sref-active="active"
-          ui-sref="app.login">
-          Sign in
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link"
-          ui-sref-active="active"
-          ui-sref="app.register">
-          Sign up
-        </a>
-      </li>
-  
       <li class="nav-item">
           <a class="nav-link"
             ui-sref-active="active"
-            ui-sref="app.signin">
+            ui-sref="app.login">
             <i class="ion-log-in"></i>&nbsp;Login
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a class="nav-link"
-            ui-sref-active="active"
-            ui-sref="app.adminpanel">
-            <i class="ion-gear-a"></i>&nbsp;Admin Panel
           </a>
         </li>
 
@@ -76,7 +51,7 @@
         <a class="nav-link"
           ui-sref-active="active"
           ui-sref="app.home">
-          Home
+          <i class="ion-ios-home"></i>&nbsp;Home
         </a>
       </li>
 
@@ -84,7 +59,7 @@
         <a class="nav-link"
           ui-sref-active="active"
           ui-sref="app.contact">
-          Contact
+          <i class="ion-ios-chatboxes"></i>&nbsp;Contact
         </a>
       </li>
 
@@ -92,7 +67,7 @@
         <a class="nav-link"
           ui-sref-active="active"
           ui-sref="app.projects">
-          Projects
+          <i class="ion-ios-briefcase"></i>&nbsp;Projects
         </a>
       </li>
 
@@ -115,9 +90,17 @@
       <li class="nav-item">
         <a class="nav-link"
           ui-sref-active="active"
+          ui-sref="app.adminpanel">
+          <i class="ion-gear-a"></i>&nbsp;Admin 
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link"
+          ui-sref-active="active"
           ui-sref="app.profile.main({ username: $ctrl.currentUser.username})">
+          {{$ctrl.currentUser.username}}
           <img ng-src="{{$ctrl.currentUser.image}}" class="user-pic" />
-          {{ $ctrl.currentUser.username }}
         </a>
       </li>
 

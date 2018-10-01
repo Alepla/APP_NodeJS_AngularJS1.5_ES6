@@ -11,14 +11,14 @@ router.get('/', function(req, res, next) {
 
 router.post('/', function(req, res, next) {
     console.log(req.body);
-    Projects.create({name:req.body.name,company:req.body.company,goal:req.body.goal,sector:req.body.sector,rewards:req.body.rewards,desc:req.body.desc},
-            function(err, project){
-                if(err){
-                    res.send(false);
-                }else{
-                    res.send(true);
-                }
-            });
+    Projects.create({name:req.body.name,company:req.body.company,goal:req.body.goal,sector:req.body.sector,rewards:req.body.rewards,desc:req.body.desc,author:req.body.author},
+    function(err, project){
+        if(err){
+            res.send(false);
+        }else{
+            res.send(true);
+        }
+    });
 });
 
 router.put('/', function(req, res, next) {

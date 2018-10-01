@@ -14,18 +14,13 @@ export default class User {
 
 
   attemptAuth(type, credentials) {
-    let route = (type === 'login') ? '/login' : '';
     return this._$http({
-      url: this._AppConstants.api + '/users' + route,
+      url: this._AppConstants.api + '/users/' + type,
       method: 'POST',
-      data: {
-        user: credentials
-      }
-    }).then(
-      (res) => {
+      data: { user : credentials}
+    }).then((res) => {
         this._JWT.save(res.data.user.token);
         this.current = res.data.user;
-
         return res;
       }
     );
@@ -47,7 +42,8 @@ export default class User {
   logout() {
     this.current = null;
     this._JWT.destroy();
-    this._$state.go(this._$state.$current, null, { reload: true });
+    this._$state.go(this._$state.$current, null);
+    this._$state.go('app.home');
   }
 
   verifyAuth() {

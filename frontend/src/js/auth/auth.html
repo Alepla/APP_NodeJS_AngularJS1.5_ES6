@@ -1,55 +1,66 @@
 <div class="auth-page">
   <div class="container page">
     <div class="row">
-
-      <div class="col-md-6 offset-md-3 col-xs-12">
-        <h1 class="text-xs-center" ng-bind="::$ctrl.title"></h1>
-        <p class="text-xs-center">
-          <a ui-sref="app.login"
-            ng-show="$ctrl.authType === 'register'">
-            Have an account?
-          </a>
-          <a ui-sref="app.register"
-            ng-show="$ctrl.authType === 'login'">
-            Need an account?
-          </a>
-        </p>
-
-        <list-errors errors="$ctrl.errors"></list-errors>
-
-        <form ng-submit="$ctrl.submitForm()">
-          <fieldset ng-disabled="$ctrl.isSubmitting">
-
-            <fieldset class="form-group" ng-show="$ctrl.authType === 'register'">
-              <input class="form-control form-control-lg"
-                type="text"
-                placeholder="Username"
-                ng-model="$ctrl.formData.username" />
-            </fieldset>
-
-            <fieldset class="form-group">
-              <input class="form-control form-control-lg"
-                type="email"
-                placeholder="Email"
-                ng-model="$ctrl.formData.email" />
-            </fieldset>
-
-            <fieldset class="form-group">
-              <input class="form-control form-control-lg"
-                type="password"
-                placeholder="Password"
-                ng-model="$ctrl.formData.password" />
-            </fieldset>
-
-            <button class="btn btn-lg btn-primary pull-xs-right"
-              type="submit"
-              ng-bind="::$ctrl.title">
-            </button>
-
-          </fieldset>
-        </form>
-      </div>
-
+		<div class="col-md-6 offset-md-3 col-xs-12">
+			<h1 class="text-xs-center" ng-bind="::$ctrl.title"></h1>
+			<p class="text-xs-center">
+				<a ui-sref="app.login"
+					ng-show="$ctrl.authType === 'register'">
+					Have an account?
+				</a>
+				<a ui-sref="app.register"
+					ng-show="$ctrl.authType === 'login'">
+					Need an account?
+				</a>
+			</p>
+			<a href="http://localhost:3000/api/auth/googleplus" style="font-size: 25px;"><i class="fa fa-google"></i><i class="ion-social-google-outline"></i>&nbsp;Google</a><br />
+			<a href="http://localhost:3000/api/auth/github" style="font-size: 25px; color:black"><i class="ion-social-github"></i>&nbsp;Github</a>
+			<form name="authForm">
+				<fieldset ng-disabled="$ctrl.disabledForm">
+					<fieldset class="form-group" ng-show="$ctrl.authType === 'register'">
+						<input required class="form-control form-control-lg" type="text" placeholder="Username" ng-model="$ctrl.authForm.username" name="Username" ng-minlength="3" ng-maxlength="20"/>
+						<span class="text-danger" ng-show="authForm.Username.$error.required && (authForm.Username.$dirty || authForm.Username.$touched)">Enter a name</span>
+						<span class="text-danger" ng-show="authForm.Username.$error.minlength">Enter more than 3 characters</span>
+						<span class="text-danger" ng-show="authForm.Username.$error.maxlength">Enter less than 20 characters</span>
+					</fieldset>
+	
+					<fieldset class="form-group">
+						<input required class="form-control form-control-lg" type="email" placeholder="Email" ng-model="$ctrl.authForm.email" name="Email"/>
+						<span class="text-danger" ng-show="authForm.Email.$error.required && (authForm.Email.$dirty || authForm.Email.$touched)">Enter a email</span>
+						<span class="text-danger" ng-show="authForm.Email.$error.email">Invalid email</span>
+					</fieldset>
+	
+					<fieldset class="form-group">
+						<input required class="form-control form-control-lg" type="password" placeholder="Password" ng-model="$ctrl.authForm.password" name="Password" ng-minlength="6" ng-maxlength="40"/>
+						<span class="text-danger" ng-show="authForm.Password.$error.required && (authForm.Password.$dirty || authForm.Password.$touched)">Enter a password</span>
+						<span class="text-danger" ng-show="authForm.Password.$error.minlength">Enter more than 6 characters</span>
+						<span class="text-danger" ng-show="authForm.Password.$error.maxlength">Enter less than 40 characters</span>
+					</fieldset>
+	
+					<fieldset class="form-group" ng-show="$ctrl.authType === 'register'">
+						<input required class="form-control form-control-lg" type="password" placeholder="Password" ng-model="$ctrl.authForm.rpassword" name="rPassword"/>
+						<span class="text-danger" ng-show="authForm.rPassword.$error.required && (authForm.rPassword.$dirty || authForm.rPassword.$touched)">Enter a password</span>
+						<span class="text-danger" ng-show="$ctrl.authForm.rpassword != $ctrl.authForm.password && (authForm.rPassword.$dirty || authForm.rPassword.$touched)">The password not are the same</span>
+					</fieldset>
+					<fieldset ng-show="$ctrl.authType === 'register'">
+						<button class="btn btn-lg btn-primary pull-xs-right" type="submit" ng-bind="::$ctrl.title"
+							ng-show="authForm.Username.$valid && authForm.Email.$valid && authForm.Password.$valid && authForm.rPassword.$valid && $ctrl.authForm.rpassword === $ctrl.authForm.password"
+							ng-click="$ctrl.authSubmit()"></button>
+						<button class="btn btn-lg btn-primary pull-xs-right" type="submit" ng-bind="::$ctrl.title"
+							ng-hide="authForm.Username.$valid && authForm.Email.$valid && authForm.Password.$valid && authForm.rPassword.$valid && $ctrl.authForm.rpassword === $ctrl.authForm.password"
+							ng-click="$ctrl.nvalidSubmit()"></button>
+					</fieldset>
+					<fieldset ng-show="$ctrl.authType === 'login'">
+						<button class="btn btn-lg btn-primary pull-xs-right" type="submit" ng-bind="::$ctrl.title"
+							ng-show="authForm.Email.$valid && authForm.Password.$valid"
+							ng-click="$ctrl.authSubmit()"></button>
+						<button class="btn btn-lg btn-primary pull-xs-right" type="submit" ng-bind="::$ctrl.title"
+							ng-hide="authForm.Email.$valid && authForm.Password.$valid"
+							ng-click="$ctrl.nvalidSubmit()"></button>
+					</fieldset>
+				</fieldset>
+			</form>
+		</div>
     </div>
   </div>
 </div>

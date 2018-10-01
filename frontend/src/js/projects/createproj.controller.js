@@ -1,5 +1,5 @@
 class CreateprojCtrl {
-    constructor(Projects,Toastr,$timeout,$state) {
+    constructor(Projects,Toastr,$timeout,$state,User) {
         'ngInject';
         var rewards = [];
         this.showSector = false;
@@ -28,7 +28,8 @@ class CreateprojCtrl {
                     goal: this.createproj.inputGoal,
                     sector: this.createproj.selectSector,
                     rewards: rewards,
-                    desc: this.createproj.inputDesc
+                    desc: this.createproj.inputDesc,
+                    author: User.current.id
                 }
                 Projects.setProjects(data).then(function(response){
                     if(response.data){

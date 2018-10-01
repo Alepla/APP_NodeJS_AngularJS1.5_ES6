@@ -10,8 +10,16 @@ function ProfileConfig($stateProvider) {
     templateUrl: 'profile/profile.html',
     resolve: {
       profile: function(Profile, $state, $stateParams) {
+        console.log($stateParams.username)
         return Profile.get($stateParams.username).then(
           (profile) => profile,
+          (err) => $state.go('app.home')
+        )
+      },
+      projects: function(Profile, $state, $stateParams,User) {
+        console.log(User.current.id)
+        return Profile.projects(User.current.id).then(
+          (projects) => projects,
           (err) => $state.go('app.home')
         )
       }

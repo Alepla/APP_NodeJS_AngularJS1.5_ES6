@@ -14,6 +14,14 @@ export default class Profile {
     }).then((res) => res.data.profile);
   }
 
+  projects(username) {
+    return this._$http({
+      url: this._AppConstants.api + '/profiles/' + username + '/projects',
+      method: 'GET'
+    }).then((res) => res.data.projects);
+  }
+ 
+
   follow(username) {
     return this._$http({
       url: this._AppConstants.api + '/profiles/' + username + '/follow',

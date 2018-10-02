@@ -1,0 +1,39 @@
+<div class="auth-page">
+    <div class="container page">
+      <div class="row">
+        <div class="col-md-6 offset-md-3 col-xs-12">
+          <h1 class="text-xs-center" ng-bind="::$ctrl.title"></h1>
+          <p class="text-xs-center">
+            <a ui-sref="app.register">Need an account?</a>
+          </p>
+  
+          <list-errors errors="$ctrl.errors"></list-errors>
+  
+          <form id="signIn" name="signIn">
+  
+            <div class="form-group">
+                <input required ng-model="$ctrl.signIn.inputMail" name="inputMail" type="text" id="inputMail" class="form-control form-control-lg" placeholder="Email" ng-pattern="/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$/i" ng-model-options="{  debounce: 500 }"/>
+                <span ng-show="signIn.inputMail.$error.required && (signIn.inputMail.$dirty || signIn.inputMail.$touched)">Enter a Electronic Mail</span>
+                <span ng-show="signIn.inputMail.$error.pattern">The format of electronic mail is incorrect</span>
+            </div>
+  
+            <div class="form-group">
+                <input required ng-model="$ctrl.signIn.inputPassword" name="inputPassword" type="password" id="inputPassword" class="form-control form-control-lg" placeholder="Password" ng-model-options="{  debounce: 500 }"/>
+                <span ng-show="signIn.inputPassword.$error.required && (signIn.inputPassword.$dirty || signIn.inputPassword.$touched)">Enter a Password</span>
+            </div>
+            
+  
+            <div class="col-md-12 text-right">
+              <input class="btn btn-primary btn-lg" type="submit" id="submitBtN" name="submit" value="Send Valid"
+              ng-show="signIn.inputMail.$valid && signIn.inputPassword.$valid && $ctrl.showButton"
+              ng-click="$ctrl.submitSignIn()"/>
+              <input class="btn btn-primary btn-lg" type="submit" id="submitBtn" name="submit" value="Send"
+              ng-hide="signIn.inputMail.$valid && signIn.inputPassword.$valid"
+              ng-click="$ctrl.nvalidForm()"/>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  

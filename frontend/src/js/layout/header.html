@@ -1,9 +1,9 @@
-<nav class="navbar navbar-light">
-  <div class="container">
+<nav class="navbar navbar-light" style="margin-bottom:0px;">
+  <div class="container" style="font-size:18px;">
 
-    <a class="navbar-brand"
-      ui-sref="app.home"
-      ng-bind="::$ctrl.appName | lowercase">
+    <a class="navbar-brand" style="height:65px;"
+      ui-sref="app.home">
+      <img style="height: 100%;" src="images/crowcode.svg">
     </a>
 
     <!-- Show this for logged out users -->
@@ -74,16 +74,8 @@
       <li class="nav-item">
         <a class="nav-link"
           ui-sref-active="active"
-          ui-sref="app.editor">
-          <i class="ion-compose"></i>&nbsp;New Article
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link"
-          ui-sref-active="active"
-          ui-sref="app.settings">
-          <i class="ion-gear-a"></i>&nbsp;Settings
+          ui-sref="app.createproj">
+          <i class="ion-compose"></i>&nbsp;New Project
         </a>
       </li>
 

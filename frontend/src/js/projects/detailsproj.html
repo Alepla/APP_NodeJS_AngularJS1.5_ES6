@@ -4,10 +4,10 @@
             <br><br>
             <h1 class="mt-4">{{$ctrl.infoProj.name}}</h1>
             <p class="lead">
-                by<a href="#">{{$ctrl.infoProj.company}}</a>
+                by <a href="#">{{$ctrl.infoProj.company}}</a>
             </p>
             <hr>
-            <p>Posted on January 1, 2018 at 12:00 PM</p>
+            <p>Created at {{$ctrl.infoProj.createdAt}}</p>
             <hr>
             <img class="img-fluid rounded" src="http://placehold.it/900x300" alt="">
             <hr>
@@ -27,21 +27,10 @@
         <br>
         <!-- Sidebar Widgets Column -->
         <div class="col-md-4">
-            <br><br><br><br><br><br>
+            <br><br><br><br><br><br><br>
             <div class="card my-4">
-                <h5 class="card-header">Search</h5>
-                <div class="card-body">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Search for...">
-                        <span class="input-group-btn">
-                            <button class="btn btn-secondary" type="button">Go!</button>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="card my-4">
-                <h5 class="card-header">Money Goal</h5>
-                <div class="card-body">
+                <h4 class="card-header">MONEY GOAL</h4>
+                <div class="card-body" style="padding: 30px;">
                     <div class="row">
                         <div class="col-lg-2">
                             00$
@@ -57,10 +46,14 @@
                     </div>
                 </div>
             </div>
-            <div class="card my-4" ng-repeat="project in $ctrl.rewardProj">
-                <h5 class="card-header">Reward</h5>
-                <div class="card-body">{{project}}</div>
-            </div>
+            <h4 class="card-header">REWARDS</h4>
+            <div class="card w-50" ng-repeat="project in $ctrl.rewardProj" style="height:200px; padding:40px;">
+                <div class="card-body">
+                  <h4 class="card-title">{{project.title}}</h4>
+                  <p class="card-text">{{project.money}},00€</p>
+                  <p class="card-text">{{project.desc}}.</p>
+                </div>
+              </div>
         </div>
     </div>
 </div>

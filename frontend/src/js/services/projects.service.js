@@ -31,9 +31,9 @@ export default class Projects {
         })
     }
 
-    getProject(id) {
+    getProject(slug) {
         return this._$http({
-            url: this._AppConstants.api + '/projects/'+ id,
+            url: this._AppConstants.api + '/projects/' + slug,
             method: 'GET',
         }).then((res) => res.data.projects);
     }

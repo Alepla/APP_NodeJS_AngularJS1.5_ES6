@@ -9,6 +9,7 @@ class UpdateprojCtrl {
         this.selectSector = ["Web app","Mobile app","Desktop app","Videogames"];
         this.infoProj = project;
         this.rewards = project.rewards;
+        console.log(project);
 
         this.AddNew = function() {
             this.showButtonCancel = true;
@@ -84,7 +85,8 @@ class UpdateprojCtrl {
                     goal: this.infoProj.goal,
                     sector: this.infoProj.sector,
                     rewards: project.rewards,
-                    desc: this.infoProj.desc
+                    desc: this.infoProj.desc,
+                    oldID: this.infoProj._id
                 }
                 console.log(data);
                 Projects.updateProject(data).then(function(response){

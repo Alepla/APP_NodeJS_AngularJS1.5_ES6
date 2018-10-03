@@ -22,7 +22,7 @@ class ProjectsCtrl {
         }
 
         this._$scope.openDetails = function(){
-            $state.go('app.detailsproject', { id: this.project['_id'] });
+            $state.go('app.detailsproject', {slug: this.project['slug'] });
         };
 
         this.changePage = function(){
@@ -35,7 +35,7 @@ class ProjectsCtrl {
         }
 
         this._$scope.updateInfo = function(){
-            $state.go('app.updateproj', { id: this.project['_id'] });
+            $state.go('app.updateproj', { slug: this.project['slug'] });
         };
 
         this.clearFilter = function(){

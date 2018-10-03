@@ -1,22 +1,26 @@
 <div class="home-page">
 
-  <!-- Splash banner that only shows when not logged in -->
-  <div class="banner" show-authed="false">
-      <div class="container">
-          <h1 class="logo-font" ng-bind="::$ctrl.appName | lowercase"></h1>
-          <p>A place to share your knowledge.</p>
+  <div style="height: 400px">
+    <div uib-carousel active="active" interval="$ctrl.myInterval" no-wrap="$ctrl.noWrapSlides">
+      <div uib-slide ng-repeat="slide in $ctrl.slides track by slide.id" index="slide.id" style="height: 400px">
+        <img ng-src="{{slide.image}}" class="img-fluid" style="filter: blur(2px);">
+        <div class="carousel-caption" style="padding-bottom:100px;">
+            <img src="images/crowcode.svg">
+          <h2>{{slide.text}}</h2>
+        </div>
       </div>
+    </div>
   </div>
-
-  <h1 class="my-4">Most popular categories</h1><br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
+  <div class="jumbotron jumbotron-sm">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12 col-lg-12">
+                <h1 class="h1">
+                    Most popular categories</h1>
+            </div>
+        </div>
+    </div>
+  </div>
 
 
  <div class="container">
@@ -24,11 +28,9 @@
          <div class="col-sm-4" ng-repeat="sector in infoSect">
              <div class="panel panel-primary">
                  <div class="panel-heading">{{sector}}</div>
-                 <div class="panel-body">
-                     <img src="https://placehold.it/150x80?text=IMAGE"
-                     class="img-responsive" style="width:100%"
-                     ui-sref="app.projects({filter:sector})">
-                 </div>
+                    <img ng-src="/images/{{sector}}.svg"
+                    class="img-responsive" style="width:100%"
+                    ui-sref="app.projects({filter:sector})" />
              </div><br>
           </div><br>
      </div>

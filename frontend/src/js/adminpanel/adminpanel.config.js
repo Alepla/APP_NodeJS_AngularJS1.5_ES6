@@ -13,6 +13,11 @@ function AdminpanelConfig($stateProvider) {
           return Adminpanel.getProjects().then(
             (Adminpanel) => Adminpanel
           )
+        },
+        users: function(Adminpanel) {
+          return Adminpanel.getUsers().then(
+            (Adminpanel) => Adminpanel
+          )
         }
       }
     });

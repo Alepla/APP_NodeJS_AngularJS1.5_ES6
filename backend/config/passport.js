@@ -51,6 +51,7 @@ passport.use(new GoogleStrategy({
           var user = new User({
               idsocial: profile.id,
               username: profile.name.givenName,
+              type: "client",
               email: profile.emails[0].value,
               image: profile.photos[0].value,
           });
@@ -84,6 +85,7 @@ passport.use(new GithubStrategy({
             var user = new User({
                 idsocial: profile.id,
                 username: profile.username,
+                type: "client",
                 email: profile.emails[0].value,
                 image: profile.photos[0].value,
             });

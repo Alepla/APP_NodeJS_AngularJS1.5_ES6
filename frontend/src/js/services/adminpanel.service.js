@@ -22,6 +22,29 @@ export default class Adminpanel {
         }).then((res) => res.data.users);
     }
 
+    deleteProject(slug) {
+        console.log(slug);
+        return this._$http({
+            url: this._AppConstants.api + '/adminpanel/' + slug,
+            method: 'DELETE'
+        })
+    }
+
+    getUseres(id) {
+        return this._$http({
+            url: this._AppConstants.api + '/adminpanel/' + id,
+            method: 'GET',
+        }).then((res) => res.data.user);
+    }
+
+    updateUser(user){
+        return this._$http({
+            url: `${this._AppConstants.api}/adminpanel`,
+            method: 'PUT',
+            data: user
+        })
+    }
+
     deleteUsers(id) {
         return this._$http({
             url: this._AppConstants.api + '/adminpanel/' + id,

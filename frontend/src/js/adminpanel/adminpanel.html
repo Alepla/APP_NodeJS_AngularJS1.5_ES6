@@ -66,6 +66,7 @@
                                     <th>ID</th>
                                     <th>Email</th>
                                     <th>Username</th>
+                                    <th>Type</th>
                                     <th class="blank-cell"></th>
                                     <th class="blank-cell"></th>
                                     <th class="blank-cell"></th>
@@ -76,11 +77,12 @@
                                     <td>{{ user._id }}</td>
                                     <td>{{ user.email }}</td>
                                     <td>{{ user.username }}</td>
+                                    <td>{{ user.type }}</td>
                                     <td class="users controls blank-cell">
-                                        <a class="btn pointer" id="{{project.slug}}" data-ng-click=""><i class="ion-ios-eye"></i></a>
+                                        <a class="btn pointer" id="{{user._id}}" ng-click="open('list')"><i class="ion-ios-eye"></i></a>
                                     </td>
                                     <td class="users controls blank-cell">
-                                        <a class="btn pointer" data-ng-click=""><i class="ion-android-color-palette"></i></a>
+                                        <a class="btn pointer" id="{{user._id}}" ng-click="open('update')"><i class="ion-android-color-palette"></i></a>
                                     </td>
                                     <td class="users controls blank-cell">
                                         <a class="btn pointer" id="{{ user._id }}" data-ng-click="deleteUser()"><i class="ion-ios-trash"></i></a>

@@ -1,5 +1,5 @@
 class AdminpanelCtrl {
-    constructor($rootScope, $scope, projects, $state, users, Adminpanel, Toastr) {
+    constructor($rootScope, $scope, projects, $state, users, Adminpanel, Toastr, $uibModal) {
         'ngInject';
         this._$scope = $scope;
         this.infoProject = projects;
@@ -12,6 +12,28 @@ class AdminpanelCtrl {
         }else {
             this.showUseres = false;
             this.showProjects = true;
+        }
+
+        this._$scope.open = function(val){
+            if(val == 'list'){
+                $rootScope.list = true;
+            }else {
+                $rootScope.list = false;
+            }
+            var id = this.user['_id'];
+            $uibModal.open({
+                animation: true,
+                templateUrl: 'adminpanel/listUserModal.html',
+                controller: 'ModalInstanceAPCtrl',
+                controllerAs: '$ctrl',
+                resolve: {
+                    user: function(Adminpanel) {
+                        return Adminpanel.getUseres(id).then(
+                          (Adminpanel) => Adminpanel
+                        )
+                    }
+                }
+            });
         }
 
         /*Pager For Projects*/
@@ -60,7 +82,15 @@ class AdminpanelCtrl {
         };
 
         this._$scope.showDeleteProject = function(){
-            $state.go('app.deleteproj', { slug: this.project['slug'] });
+            var slug = this.project['slug'];
+            Adminpanel.deleteProject(slug).then(
+                (success) => {
+                    Toastr.showToastr('success', 'Project deleted');
+                    //$rootScope.chargeUser = true;
+                    $state.reload();
+                },
+                (err) => Toastr.showToastr('error', 'Somthing wrong was happened')
+            )
         };
 
         this._$scope.deleteUser = function(){
@@ -77,4 +107,55 @@ class AdminpanelCtrl {
 
 }
 
-export default AdminpanelCtrl;
+class ModalInstanceAPCtrl{
+    constructor(Toastr, $uibModalInstance, $rootScope, user, Adminpanel, $state) {
+        'ngInject';
+
+        this.user = user;
+        this.selectType = ["admin", "client"];
+
+        if($rootScope.list){
+            this.modalList = true;
+        }else {
+            this.modalUpdate = true;
+        }
+
+        this.nvalidUser = function(){
+            Toastr.showToastr(
+				'error',
+				'Fill in all the fields of the form'
+			);
+        };
+
+        this.saveUser = function(){
+            var data = {
+                id: this.user._id,
+                username: this.user.username,
+                email: this.user.email,
+                type: this.user.type
+            }
+            Adminpanel.updateUser(data).then(function(response){
+                if(response.data){
+                    Toastr.showToastr(
+                        'success',
+                        'User saved correctly'
+                    );
+                }else{
+                    Toastr.showToastr(
+                        'error',
+                        'Something wrong was happened'
+                    );
+                }
+            })
+            $rootScope.chargeUser = true;
+            $state.reload();
+            $uibModalInstance.close();
+        }
+
+        this.cancel = function () {
+            $uibModalInstance.close();
+        };
+    };
+}
+
+export default {AdminpanelCtrl, ModalInstanceAPCtrl};

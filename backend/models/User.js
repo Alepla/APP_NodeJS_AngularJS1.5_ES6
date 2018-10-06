@@ -13,7 +13,8 @@ var UserSchema = new mongoose.Schema({
   favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Article' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],*/
   hash: String,
-  salt: String
+  salt: String,
+  type: String
 }, {timestamps: true});
 
 //UserSchema.plugin(uniqueValidator, {message: 'is already taken.'});
@@ -47,7 +48,8 @@ UserSchema.methods.toAuthJSON = function(){
     email: this.email,
     token: this.generateJWT(),
     bio: this.bio,
-    image: this.image || 'https://static.productionready.io/images/smiley-cyrus.jpg'
+    image: this.image || 'https://static.productionready.io/images/smiley-cyrus.jpg',
+    type: this.type
   };
 };
 

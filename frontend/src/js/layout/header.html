@@ -21,18 +21,19 @@
       <li class="nav-item">
         <a class="nav-link"
           ui-sref-active="active"
-          ui-sref="app.contact">
-          <i class="ion-ios-chatboxes"></i>&nbsp;Contact
+          ui-sref="app.projects">
+          <i class="ion-ios-briefcase"></i>&nbsp;Projects
         </a>
       </li>
 
       <li class="nav-item">
         <a class="nav-link"
           ui-sref-active="active"
-          ui-sref="app.projects">
-          <i class="ion-ios-briefcase"></i>&nbsp;Projects
+          ui-sref="app.contact">
+          <i class="ion-ios-chatboxes"></i>&nbsp;Contact
         </a>
       </li>
+
       <li class="nav-item">
           <a class="nav-link"
             ui-sref-active="active"
@@ -58,14 +59,6 @@
       <li class="nav-item">
         <a class="nav-link"
           ui-sref-active="active"
-          ui-sref="app.contact">
-          <i class="ion-ios-chatboxes"></i>&nbsp;Contact
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link"
-          ui-sref-active="active"
           ui-sref="app.projects">
           <i class="ion-ios-briefcase"></i>&nbsp;Projects
         </a>
@@ -82,8 +75,16 @@
       <li class="nav-item">
         <a class="nav-link"
           ui-sref-active="active"
+          ui-sref="app.contact">
+          <i class="ion-ios-chatboxes"></i>&nbsp;Contact
+        </a>
+      </li>
+
+      <li class="nav-item" ng-show="{{$ctrl.currentUser.type === 'admin'}}">
+        <a class="nav-link"
+          ui-sref-active="active"
           ui-sref="app.adminpanel">
-          <i class="ion-gear-a"></i>&nbsp;Admin 
+          <i class="ion-gear-a"></i>&nbsp;Admin Panel
         </a>
       </li>
 

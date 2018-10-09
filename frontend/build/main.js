@@ -5205,7 +5205,7 @@ function Nodeback (apply, resolve, reject) {
   }
 }
 
-},{"angular":17,"assert-function":24,"to-array":49}],8:[function(require,module,exports){
+},{"angular":17,"assert-function":24,"to-array":51}],8:[function(require,module,exports){
 'use strict'
 
 var angular = require('angular')
@@ -5267,7 +5267,7 @@ function Success (fn, context) {
   }
 }
 
-},{"dot-prop":31,"lazy-async":36,"load-script-global":38,"stripe-errback":48}],10:[function(require,module,exports){
+},{"dot-prop":31,"lazy-async":36,"load-script-global":38,"stripe-errback":50}],10:[function(require,module,exports){
 'use strict'
 
 var LazyStripe = require('./lazy')
@@ -54909,7 +54909,7 @@ module.exports = function assertEqual (a, b) {
   assert(a === b, format('expected `%s` to equal `%s`', print(a), print(b)))
 }
 
-},{"assert-ok":25,"print-value":43,"simple-format":47}],24:[function(require,module,exports){
+},{"assert-ok":25,"print-value":45,"simple-format":49}],24:[function(require,module,exports){
 'use strict'
 
 module.exports = function assertFunction (value) {
@@ -55060,7 +55060,7 @@ function dezalgo (cb) {
   }
 }
 
-},{"asap":21,"wrappy":50}],31:[function(require,module,exports){
+},{"asap":21,"wrappy":52}],31:[function(require,module,exports){
 'use strict';
 var isObj = require('is-obj');
 
@@ -55318,7 +55318,7 @@ function Lazy (methods, load) {
   }
 }
 
-},{"array-last":18,"assert-equal":23,"assert-ok":25,"call-all-fns":26,"dezalgo":30,"dot-prop":37,"to-array":49}],37:[function(require,module,exports){
+},{"array-last":18,"assert-equal":23,"assert-ok":25,"call-all-fns":26,"dezalgo":30,"dot-prop":37,"to-array":51}],37:[function(require,module,exports){
 'use strict';
 var isObj = require('is-obj');
 
@@ -55499,7 +55499,7 @@ function jsonpCallback (options, callback) {
   return id
 }
 
-},{"assert-ok":25,"cuid":27,"dezalgo":30,"ear":32,"global/window":33,"load-script":39,"query-extend":46,"xtend":51}],39:[function(require,module,exports){
+},{"assert-ok":25,"cuid":27,"dezalgo":30,"ear":32,"global/window":33,"load-script":39,"query-extend":48,"xtend":53}],39:[function(require,module,exports){
 
 module.exports = function load (src, opts, cb) {
   var head = document.head || document.getElementsByTagName('head')[0]
@@ -56959,6 +56959,2909 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],41:[function(require,module,exports){
+/**!
+ * AngularJS file upload directives and services. Supports: file upload/drop/paste, resume, cancel/abort,
+ * progress, resize, thumbnail, preview, validation and CORS
+ * FileAPI Flash shim for old browsers not supporting FormData
+ * @author  Danial  <danial.farid@gmail.com>
+ * @version 12.2.13
+ */
+
+(function () {
+  /** @namespace FileAPI.noContentTimeout */
+
+  function patchXHR(fnName, newFn) {
+    window.XMLHttpRequest.prototype[fnName] = newFn(window.XMLHttpRequest.prototype[fnName]);
+  }
+
+  function redefineProp(xhr, prop, fn) {
+    try {
+      Object.defineProperty(xhr, prop, {get: fn});
+    } catch (e) {/*ignore*/
+    }
+  }
+
+  if (!window.FileAPI) {
+    window.FileAPI = {};
+  }
+
+  if (!window.XMLHttpRequest) {
+    throw 'AJAX is not supported. XMLHttpRequest is not defined.';
+  }
+
+  FileAPI.shouldLoad = !window.FormData || FileAPI.forceLoad;
+  if (FileAPI.shouldLoad) {
+    var initializeUploadListener = function (xhr) {
+      if (!xhr.__listeners) {
+        if (!xhr.upload) xhr.upload = {};
+        xhr.__listeners = [];
+        var origAddEventListener = xhr.upload.addEventListener;
+        xhr.upload.addEventListener = function (t, fn) {
+          xhr.__listeners[t] = fn;
+          if (origAddEventListener) origAddEventListener.apply(this, arguments);
+        };
+      }
+    };
+
+    patchXHR('open', function (orig) {
+      return function (m, url, b) {
+        initializeUploadListener(this);
+        this.__url = url;
+        try {
+          orig.apply(this, [m, url, b]);
+        } catch (e) {
+          if (e.message.indexOf('Access is denied') > -1) {
+            this.__origError = e;
+            orig.apply(this, [m, '_fix_for_ie_crossdomain__', b]);
+          }
+        }
+      };
+    });
+
+    patchXHR('getResponseHeader', function (orig) {
+      return function (h) {
+        return this.__fileApiXHR && this.__fileApiXHR.getResponseHeader ? this.__fileApiXHR.getResponseHeader(h) : (orig == null ? null : orig.apply(this, [h]));
+      };
+    });
+
+    patchXHR('getAllResponseHeaders', function (orig) {
+      return function () {
+        return this.__fileApiXHR && this.__fileApiXHR.getAllResponseHeaders ? this.__fileApiXHR.getAllResponseHeaders() : (orig == null ? null : orig.apply(this));
+      };
+    });
+
+    patchXHR('abort', function (orig) {
+      return function () {
+        return this.__fileApiXHR && this.__fileApiXHR.abort ? this.__fileApiXHR.abort() : (orig == null ? null : orig.apply(this));
+      };
+    });
+
+    patchXHR('setRequestHeader', function (orig) {
+      return function (header, value) {
+        if (header === '__setXHR_') {
+          initializeUploadListener(this);
+          var val = value(this);
+          // fix for angular < 1.2.0
+          if (val instanceof Function) {
+            val(this);
+          }
+        } else {
+          this.__requestHeaders = this.__requestHeaders || {};
+          this.__requestHeaders[header] = value;
+          orig.apply(this, arguments);
+        }
+      };
+    });
+
+    patchXHR('send', function (orig) {
+      return function () {
+        var xhr = this;
+        if (arguments[0] && arguments[0].__isFileAPIShim) {
+          var formData = arguments[0];
+          var config = {
+            url: xhr.__url,
+            jsonp: false, //removes the callback form param
+            cache: true, //removes the ?fileapiXXX in the url
+            complete: function (err, fileApiXHR) {
+              if (err && angular.isString(err) && err.indexOf('#2174') !== -1) {
+                // this error seems to be fine the file is being uploaded properly.
+                err = null;
+              }
+              xhr.__completed = true;
+              if (!err && xhr.__listeners.load)
+                xhr.__listeners.load({
+                  type: 'load',
+                  loaded: xhr.__loaded,
+                  total: xhr.__total,
+                  target: xhr,
+                  lengthComputable: true
+                });
+              if (!err && xhr.__listeners.loadend)
+                xhr.__listeners.loadend({
+                  type: 'loadend',
+                  loaded: xhr.__loaded,
+                  total: xhr.__total,
+                  target: xhr,
+                  lengthComputable: true
+                });
+              if (err === 'abort' && xhr.__listeners.abort)
+                xhr.__listeners.abort({
+                  type: 'abort',
+                  loaded: xhr.__loaded,
+                  total: xhr.__total,
+                  target: xhr,
+                  lengthComputable: true
+                });
+              if (fileApiXHR.status !== undefined) redefineProp(xhr, 'status', function () {
+                return (fileApiXHR.status === 0 && err && err !== 'abort') ? 500 : fileApiXHR.status;
+              });
+              if (fileApiXHR.statusText !== undefined) redefineProp(xhr, 'statusText', function () {
+                return fileApiXHR.statusText;
+              });
+              redefineProp(xhr, 'readyState', function () {
+                return 4;
+              });
+              if (fileApiXHR.response !== undefined) redefineProp(xhr, 'response', function () {
+                return fileApiXHR.response;
+              });
+              var resp = fileApiXHR.responseText || (err && fileApiXHR.status === 0 && err !== 'abort' ? err : undefined);
+              redefineProp(xhr, 'responseText', function () {
+                return resp;
+              });
+              redefineProp(xhr, 'response', function () {
+                return resp;
+              });
+              if (err) redefineProp(xhr, 'err', function () {
+                return err;
+              });
+              xhr.__fileApiXHR = fileApiXHR;
+              if (xhr.onreadystatechange) xhr.onreadystatechange();
+              if (xhr.onload) xhr.onload();
+            },
+            progress: function (e) {
+              e.target = xhr;
+              if (xhr.__listeners.progress) xhr.__listeners.progress(e);
+              xhr.__total = e.total;
+              xhr.__loaded = e.loaded;
+              if (e.total === e.loaded) {
+                // fix flash issue that doesn't call complete if there is no response text from the server
+                var _this = this;
+                setTimeout(function () {
+                  if (!xhr.__completed) {
+                    xhr.getAllResponseHeaders = function () {
+                    };
+                    _this.complete(null, {status: 204, statusText: 'No Content'});
+                  }
+                }, FileAPI.noContentTimeout || 10000);
+              }
+            },
+            headers: xhr.__requestHeaders
+          };
+          config.data = {};
+          config.files = {};
+          for (var i = 0; i < formData.data.length; i++) {
+            var item = formData.data[i];
+            if (item.val != null && item.val.name != null && item.val.size != null && item.val.type != null) {
+              config.files[item.key] = item.val;
+            } else {
+              config.data[item.key] = item.val;
+            }
+          }
+
+          setTimeout(function () {
+            if (!FileAPI.hasFlash) {
+              throw 'Adode Flash Player need to be installed. To check ahead use "FileAPI.hasFlash"';
+            }
+            xhr.__fileApiXHR = FileAPI.upload(config);
+          }, 1);
+        } else {
+          if (this.__origError) {
+            throw this.__origError;
+          }
+          orig.apply(xhr, arguments);
+        }
+      };
+    });
+    window.XMLHttpRequest.__isFileAPIShim = true;
+    window.FormData = FormData = function () {
+      return {
+        append: function (key, val, name) {
+          if (val.__isFileAPIBlobShim) {
+            val = val.data[0];
+          }
+          this.data.push({
+            key: key,
+            val: val,
+            name: name
+          });
+        },
+        data: [],
+        __isFileAPIShim: true
+      };
+    };
+
+    window.Blob = Blob = function (b) {
+      return {
+        data: b,
+        __isFileAPIBlobShim: true
+      };
+    };
+  }
+
+})();
+
+(function () {
+  /** @namespace FileAPI.forceLoad */
+  /** @namespace window.FileAPI.jsUrl */
+  /** @namespace window.FileAPI.jsPath */
+
+  function isInputTypeFile(elem) {
+    return elem[0].tagName.toLowerCase() === 'input' && elem.attr('type') && elem.attr('type').toLowerCase() === 'file';
+  }
+
+  function hasFlash() {
+    try {
+      var fo = new ActiveXObject('ShockwaveFlash.ShockwaveFlash');
+      if (fo) return true;
+    } catch (e) {
+      if (navigator.mimeTypes['application/x-shockwave-flash'] !== undefined) return true;
+    }
+    return false;
+  }
+
+  function getOffset(obj) {
+    var left = 0, top = 0;
+
+    if (window.jQuery) {
+      return jQuery(obj).offset();
+    }
+
+    if (obj.offsetParent) {
+      do {
+        left += (obj.offsetLeft - obj.scrollLeft);
+        top += (obj.offsetTop - obj.scrollTop);
+        obj = obj.offsetParent;
+      } while (obj);
+    }
+    return {
+      left: left,
+      top: top
+    };
+  }
+
+  if (FileAPI.shouldLoad) {
+    FileAPI.hasFlash = hasFlash();
+
+    //load FileAPI
+    if (FileAPI.forceLoad) {
+      FileAPI.html5 = false;
+    }
+
+    if (!FileAPI.upload) {
+      var jsUrl, basePath, script = document.createElement('script'), allScripts = document.getElementsByTagName('script'), i, index, src;
+      if (window.FileAPI.jsUrl) {
+        jsUrl = window.FileAPI.jsUrl;
+      } else if (window.FileAPI.jsPath) {
+        basePath = window.FileAPI.jsPath;
+      } else {
+        for (i = 0; i < allScripts.length; i++) {
+          src = allScripts[i].src;
+          index = src.search(/\/ng\-file\-upload[\-a-zA-z0-9\.]*\.js/);
+          if (index > -1) {
+            basePath = src.substring(0, index + 1);
+            break;
+          }
+        }
+      }
+
+      if (FileAPI.staticPath == null) FileAPI.staticPath = basePath;
+      script.setAttribute('src', jsUrl || basePath + 'FileAPI.min.js');
+      document.getElementsByTagName('head')[0].appendChild(script);
+    }
+
+    FileAPI.ngfFixIE = function (elem, fileElem, changeFn) {
+      if (!hasFlash()) {
+        throw 'Adode Flash Player need to be installed. To check ahead use "FileAPI.hasFlash"';
+      }
+      var fixInputStyle = function () {
+        var label = fileElem.parent();
+        if (elem.attr('disabled')) {
+          if (label) label.removeClass('js-fileapi-wrapper');
+        } else {
+          if (!fileElem.attr('__ngf_flash_')) {
+            fileElem.unbind('change');
+            fileElem.unbind('click');
+            fileElem.bind('change', function (evt) {
+              fileApiChangeFn.apply(this, [evt]);
+              changeFn.apply(this, [evt]);
+            });
+            fileElem.attr('__ngf_flash_', 'true');
+          }
+          label.addClass('js-fileapi-wrapper');
+          if (!isInputTypeFile(elem)) {
+            label.css('position', 'absolute')
+              .css('top', getOffset(elem[0]).top + 'px').css('left', getOffset(elem[0]).left + 'px')
+              .css('width', elem[0].offsetWidth + 'px').css('height', elem[0].offsetHeight + 'px')
+              .css('filter', 'alpha(opacity=0)').css('display', elem.css('display'))
+              .css('overflow', 'hidden').css('z-index', '900000')
+              .css('visibility', 'visible');
+            fileElem.css('width', elem[0].offsetWidth + 'px').css('height', elem[0].offsetHeight + 'px')
+              .css('position', 'absolute').css('top', '0px').css('left', '0px');
+          }
+        }
+      };
+
+      elem.bind('mouseenter', fixInputStyle);
+
+      var fileApiChangeFn = function (evt) {
+        var files = FileAPI.getFiles(evt);
+        //just a double check for #233
+        for (var i = 0; i < files.length; i++) {
+          if (files[i].size === undefined) files[i].size = 0;
+          if (files[i].name === undefined) files[i].name = 'file';
+          if (files[i].type === undefined) files[i].type = 'undefined';
+        }
+        if (!evt.target) {
+          evt.target = {};
+        }
+        evt.target.files = files;
+        // if evt.target.files is not writable use helper field
+        if (evt.target.files !== files) {
+          evt.__files_ = files;
+        }
+        (evt.__files_ || evt.target.files).item = function (i) {
+          return (evt.__files_ || evt.target.files)[i] || null;
+        };
+      };
+    };
+
+    FileAPI.disableFileInput = function (elem, disable) {
+      if (disable) {
+        elem.removeClass('js-fileapi-wrapper');
+      } else {
+        elem.addClass('js-fileapi-wrapper');
+      }
+    };
+  }
+})();
+
+if (!window.FileReader) {
+  window.FileReader = function () {
+    var _this = this, loadStarted = false;
+    this.listeners = {};
+    this.addEventListener = function (type, fn) {
+      _this.listeners[type] = _this.listeners[type] || [];
+      _this.listeners[type].push(fn);
+    };
+    this.removeEventListener = function (type, fn) {
+      if (_this.listeners[type]) _this.listeners[type].splice(_this.listeners[type].indexOf(fn), 1);
+    };
+    this.dispatchEvent = function (evt) {
+      var list = _this.listeners[evt.type];
+      if (list) {
+        for (var i = 0; i < list.length; i++) {
+          list[i].call(_this, evt);
+        }
+      }
+    };
+    this.onabort = this.onerror = this.onload = this.onloadstart = this.onloadend = this.onprogress = null;
+
+    var constructEvent = function (type, evt) {
+      var e = {type: type, target: _this, loaded: evt.loaded, total: evt.total, error: evt.error};
+      if (evt.result != null) e.target.result = evt.result;
+      return e;
+    };
+    var listener = function (evt) {
+      if (!loadStarted) {
+        loadStarted = true;
+        if (_this.onloadstart) _this.onloadstart(constructEvent('loadstart', evt));
+      }
+      var e;
+      if (evt.type === 'load') {
+        if (_this.onloadend) _this.onloadend(constructEvent('loadend', evt));
+        e = constructEvent('load', evt);
+        if (_this.onload) _this.onload(e);
+        _this.dispatchEvent(e);
+      } else if (evt.type === 'progress') {
+        e = constructEvent('progress', evt);
+        if (_this.onprogress) _this.onprogress(e);
+        _this.dispatchEvent(e);
+      } else {
+        e = constructEvent('error', evt);
+        if (_this.onerror) _this.onerror(e);
+        _this.dispatchEvent(e);
+      }
+    };
+    this.readAsDataURL = function (file) {
+      FileAPI.readAsDataURL(file, listener);
+    };
+    this.readAsText = function (file) {
+      FileAPI.readAsText(file, listener);
+    };
+  };
+}
+
+/**!
+ * AngularJS file upload directives and services. Supoorts: file upload/drop/paste, resume, cancel/abort,
+ * progress, resize, thumbnail, preview, validation and CORS
+ * @author  Danial  <danial.farid@gmail.com>
+ * @version 12.2.13
+ */
+
+if (window.XMLHttpRequest && !(window.FileAPI && FileAPI.shouldLoad)) {
+  window.XMLHttpRequest.prototype.setRequestHeader = (function (orig) {
+    return function (header, value) {
+      if (header === '__setXHR_') {
+        var val = value(this);
+        // fix for angular < 1.2.0
+        if (val instanceof Function) {
+          val(this);
+        }
+      } else {
+        orig.apply(this, arguments);
+      }
+    };
+  })(window.XMLHttpRequest.prototype.setRequestHeader);
+}
+
+var ngFileUpload = angular.module('ngFileUpload', []);
+
+ngFileUpload.version = '12.2.13';
+
+ngFileUpload.service('UploadBase', ['$http', '$q', '$timeout', function ($http, $q, $timeout) {
+  var upload = this;
+  upload.promisesCount = 0;
+
+  this.isResumeSupported = function () {
+    return window.Blob && window.Blob.prototype.slice;
+  };
+
+  var resumeSupported = this.isResumeSupported();
+
+  function sendHttp(config) {
+    config.method = config.method || 'POST';
+    config.headers = config.headers || {};
+
+    var deferred = config._deferred = config._deferred || $q.defer();
+    var promise = deferred.promise;
+
+    function notifyProgress(e) {
+      if (deferred.notify) {
+        deferred.notify(e);
+      }
+      if (promise.progressFunc) {
+        $timeout(function () {
+          promise.progressFunc(e);
+        });
+      }
+    }
+
+    function getNotifyEvent(n) {
+      if (config._start != null && resumeSupported) {
+        return {
+          loaded: n.loaded + config._start,
+          total: (config._file && config._file.size) || n.total,
+          type: n.type, config: config,
+          lengthComputable: true, target: n.target
+        };
+      } else {
+        return n;
+      }
+    }
+
+    if (!config.disableProgress) {
+      config.headers.__setXHR_ = function () {
+        return function (xhr) {
+          if (!xhr || !xhr.upload || !xhr.upload.addEventListener) return;
+          config.__XHR = xhr;
+          if (config.xhrFn) config.xhrFn(xhr);
+          xhr.upload.addEventListener('progress', function (e) {
+            e.config = config;
+            notifyProgress(getNotifyEvent(e));
+          }, false);
+          //fix for firefox not firing upload progress end, also IE8-9
+          xhr.upload.addEventListener('load', function (e) {
+            if (e.lengthComputable) {
+              e.config = config;
+              notifyProgress(getNotifyEvent(e));
+            }
+          }, false);
+        };
+      };
+    }
+
+    function uploadWithAngular() {
+      $http(config).then(function (r) {
+          if (resumeSupported && config._chunkSize && !config._finished && config._file) {
+            var fileSize = config._file && config._file.size || 0;
+            notifyProgress({
+                loaded: Math.min(config._end, fileSize),
+                total: fileSize,
+                config: config,
+                type: 'progress'
+              }
+            );
+            upload.upload(config, true);
+          } else {
+            if (config._finished) delete config._finished;
+            deferred.resolve(r);
+          }
+        }, function (e) {
+          deferred.reject(e);
+        }, function (n) {
+          deferred.notify(n);
+        }
+      );
+    }
+
+    if (!resumeSupported) {
+      uploadWithAngular();
+    } else if (config._chunkSize && config._end && !config._finished) {
+      config._start = config._end;
+      config._end += config._chunkSize;
+      uploadWithAngular();
+    } else if (config.resumeSizeUrl) {
+      $http.get(config.resumeSizeUrl).then(function (resp) {
+        if (config.resumeSizeResponseReader) {
+          config._start = config.resumeSizeResponseReader(resp.data);
+        } else {
+          config._start = parseInt((resp.data.size == null ? resp.data : resp.data.size).toString());
+        }
+        if (config._chunkSize) {
+          config._end = config._start + config._chunkSize;
+        }
+        uploadWithAngular();
+      }, function (e) {
+        throw e;
+      });
+    } else if (config.resumeSize) {
+      config.resumeSize().then(function (size) {
+        config._start = size;
+        if (config._chunkSize) {
+          config._end = config._start + config._chunkSize;
+        }
+        uploadWithAngular();
+      }, function (e) {
+        throw e;
+      });
+    } else {
+      if (config._chunkSize) {
+        config._start = 0;
+        config._end = config._start + config._chunkSize;
+      }
+      uploadWithAngular();
+    }
+
+
+    promise.success = function (fn) {
+      promise.then(function (response) {
+        fn(response.data, response.status, response.headers, config);
+      });
+      return promise;
+    };
+
+    promise.error = function (fn) {
+      promise.then(null, function (response) {
+        fn(response.data, response.status, response.headers, config);
+      });
+      return promise;
+    };
+
+    promise.progress = function (fn) {
+      promise.progressFunc = fn;
+      promise.then(null, null, function (n) {
+        fn(n);
+      });
+      return promise;
+    };
+    promise.abort = promise.pause = function () {
+      if (config.__XHR) {
+        $timeout(function () {
+          config.__XHR.abort();
+        });
+      }
+      return promise;
+    };
+    promise.xhr = function (fn) {
+      config.xhrFn = (function (origXhrFn) {
+        return function () {
+          if (origXhrFn) origXhrFn.apply(promise, arguments);
+          fn.apply(promise, arguments);
+        };
+      })(config.xhrFn);
+      return promise;
+    };
+
+    upload.promisesCount++;
+    if (promise['finally'] && promise['finally'] instanceof Function) {
+      promise['finally'](function () {
+        upload.promisesCount--;
+      });
+    }
+    return promise;
+  }
+
+  this.isUploadInProgress = function () {
+    return upload.promisesCount > 0;
+  };
+
+  this.rename = function (file, name) {
+    file.ngfName = name;
+    return file;
+  };
+
+  this.jsonBlob = function (val) {
+    if (val != null && !angular.isString(val)) {
+      val = JSON.stringify(val);
+    }
+    var blob = new window.Blob([val], {type: 'application/json'});
+    blob._ngfBlob = true;
+    return blob;
+  };
+
+  this.json = function (val) {
+    return angular.toJson(val);
+  };
+
+  function copy(obj) {
+    var clone = {};
+    for (var key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        clone[key] = obj[key];
+      }
+    }
+    return clone;
+  }
+
+  this.isFile = function (file) {
+    return file != null && (file instanceof window.Blob || (file.flashId && file.name && file.size));
+  };
+
+  this.upload = function (config, internal) {
+    function toResumeFile(file, formData) {
+      if (file._ngfBlob) return file;
+      config._file = config._file || file;
+      if (config._start != null && resumeSupported) {
+        if (config._end && config._end >= file.size) {
+          config._finished = true;
+          config._end = file.size;
+        }
+        var slice = file.slice(config._start, config._end || file.size);
+        slice.name = file.name;
+        slice.ngfName = file.ngfName;
+        if (config._chunkSize) {
+          formData.append('_chunkSize', config._chunkSize);
+          formData.append('_currentChunkSize', config._end - config._start);
+          formData.append('_chunkNumber', Math.floor(config._start / config._chunkSize));
+          formData.append('_totalSize', config._file.size);
+        }
+        return slice;
+      }
+      return file;
+    }
+
+    function addFieldToFormData(formData, val, key) {
+      if (val !== undefined) {
+        if (angular.isDate(val)) {
+          val = val.toISOString();
+        }
+        if (angular.isString(val)) {
+          formData.append(key, val);
+        } else if (upload.isFile(val)) {
+          var file = toResumeFile(val, formData);
+          var split = key.split(',');
+          if (split[1]) {
+            file.ngfName = split[1].replace(/^\s+|\s+$/g, '');
+            key = split[0];
+          }
+          config._fileKey = config._fileKey || key;
+          formData.append(key, file, file.ngfName || file.name);
+        } else {
+          if (angular.isObject(val)) {
+            if (val.$$ngfCircularDetection) throw 'ngFileUpload: Circular reference in config.data. Make sure specified data for Upload.upload() has no circular reference: ' + key;
+
+            val.$$ngfCircularDetection = true;
+            try {
+              for (var k in val) {
+                if (val.hasOwnProperty(k) && k !== '$$ngfCircularDetection') {
+                  var objectKey = config.objectKey == null ? '[i]' : config.objectKey;
+                  if (val.length && parseInt(k) > -1) {
+                    objectKey = config.arrayKey == null ? objectKey : config.arrayKey;
+                  }
+                  addFieldToFormData(formData, val[k], key + objectKey.replace(/[ik]/g, k));
+                }
+              }
+            } finally {
+              delete val.$$ngfCircularDetection;
+            }
+          } else {
+            formData.append(key, val);
+          }
+        }
+      }
+    }
+
+    function digestConfig() {
+      config._chunkSize = upload.translateScalars(config.resumeChunkSize);
+      config._chunkSize = config._chunkSize ? parseInt(config._chunkSize.toString()) : null;
+
+      config.headers = config.headers || {};
+      config.headers['Content-Type'] = undefined;
+      config.transformRequest = config.transformRequest ?
+        (angular.isArray(config.transformRequest) ?
+          config.transformRequest : [config.transformRequest]) : [];
+      config.transformRequest.push(function (data) {
+        var formData = new window.FormData(), key;
+        data = data || config.fields || {};
+        if (config.file) {
+          data.file = config.file;
+        }
+        for (key in data) {
+          if (data.hasOwnProperty(key)) {
+            var val = data[key];
+            if (config.formDataAppender) {
+              config.formDataAppender(formData, key, val);
+            } else {
+              addFieldToFormData(formData, val, key);
+            }
+          }
+        }
+
+        return formData;
+      });
+    }
+
+    if (!internal) config = copy(config);
+    if (!config._isDigested) {
+      config._isDigested = true;
+      digestConfig();
+    }
+
+    return sendHttp(config);
+  };
+
+  this.http = function (config) {
+    config = copy(config);
+    config.transformRequest = config.transformRequest || function (data) {
+        if ((window.ArrayBuffer && data instanceof window.ArrayBuffer) || data instanceof window.Blob) {
+          return data;
+        }
+        return $http.defaults.transformRequest[0].apply(this, arguments);
+      };
+    config._chunkSize = upload.translateScalars(config.resumeChunkSize);
+    config._chunkSize = config._chunkSize ? parseInt(config._chunkSize.toString()) : null;
+
+    return sendHttp(config);
+  };
+
+  this.translateScalars = function (str) {
+    if (angular.isString(str)) {
+      if (str.search(/kb/i) === str.length - 2) {
+        return parseFloat(str.substring(0, str.length - 2) * 1024);
+      } else if (str.search(/mb/i) === str.length - 2) {
+        return parseFloat(str.substring(0, str.length - 2) * 1048576);
+      } else if (str.search(/gb/i) === str.length - 2) {
+        return parseFloat(str.substring(0, str.length - 2) * 1073741824);
+      } else if (str.search(/b/i) === str.length - 1) {
+        return parseFloat(str.substring(0, str.length - 1));
+      } else if (str.search(/s/i) === str.length - 1) {
+        return parseFloat(str.substring(0, str.length - 1));
+      } else if (str.search(/m/i) === str.length - 1) {
+        return parseFloat(str.substring(0, str.length - 1) * 60);
+      } else if (str.search(/h/i) === str.length - 1) {
+        return parseFloat(str.substring(0, str.length - 1) * 3600);
+      }
+    }
+    return str;
+  };
+
+  this.urlToBlob = function(url) {
+    var defer = $q.defer();
+    $http({url: url, method: 'get', responseType: 'arraybuffer'}).then(function (resp) {
+      var arrayBufferView = new Uint8Array(resp.data);
+      var type = resp.headers('content-type') || 'image/WebP';
+      var blob = new window.Blob([arrayBufferView], {type: type});
+      var matches = url.match(/.*\/(.+?)(\?.*)?$/);
+      if (matches.length > 1) {
+        blob.name = matches[1];
+      }
+      defer.resolve(blob);
+    }, function (e) {
+      defer.reject(e);
+    });
+    return defer.promise;
+  };
+
+  this.setDefaults = function (defaults) {
+    this.defaults = defaults || {};
+  };
+
+  this.defaults = {};
+  this.version = ngFileUpload.version;
+}
+
+]);
+
+ngFileUpload.service('Upload', ['$parse', '$timeout', '$compile', '$q', 'UploadExif', function ($parse, $timeout, $compile, $q, UploadExif) {
+  var upload = UploadExif;
+  upload.getAttrWithDefaults = function (attr, name) {
+    if (attr[name] != null) return attr[name];
+    var def = upload.defaults[name];
+    return (def == null ? def : (angular.isString(def) ? def : JSON.stringify(def)));
+  };
+
+  upload.attrGetter = function (name, attr, scope, params) {
+    var attrVal = this.getAttrWithDefaults(attr, name);
+    if (scope) {
+      try {
+        if (params) {
+          return $parse(attrVal)(scope, params);
+        } else {
+          return $parse(attrVal)(scope);
+        }
+      } catch (e) {
+        // hangle string value without single qoute
+        if (name.search(/min|max|pattern/i)) {
+          return attrVal;
+        } else {
+          throw e;
+        }
+      }
+    } else {
+      return attrVal;
+    }
+  };
+
+  upload.shouldUpdateOn = function (type, attr, scope) {
+    var modelOptions = upload.attrGetter('ngfModelOptions', attr, scope);
+    if (modelOptions && modelOptions.updateOn) {
+      return modelOptions.updateOn.split(' ').indexOf(type) > -1;
+    }
+    return true;
+  };
+
+  upload.emptyPromise = function () {
+    var d = $q.defer();
+    var args = arguments;
+    $timeout(function () {
+      d.resolve.apply(d, args);
+    });
+    return d.promise;
+  };
+
+  upload.rejectPromise = function () {
+    var d = $q.defer();
+    var args = arguments;
+    $timeout(function () {
+      d.reject.apply(d, args);
+    });
+    return d.promise;
+  };
+
+  upload.happyPromise = function (promise, data) {
+    var d = $q.defer();
+    promise.then(function (result) {
+      d.resolve(result);
+    }, function (error) {
+      $timeout(function () {
+        throw error;
+      });
+      d.resolve(data);
+    });
+    return d.promise;
+  };
+
+  function applyExifRotations(files, attr, scope) {
+    var promises = [upload.emptyPromise()];
+    angular.forEach(files, function (f, i) {
+      if (f.type.indexOf('image/jpeg') === 0 && upload.attrGetter('ngfFixOrientation', attr, scope, {$file: f})) {
+        promises.push(upload.happyPromise(upload.applyExifRotation(f), f).then(function (fixedFile) {
+          files.splice(i, 1, fixedFile);
+        }));
+      }
+    });
+    return $q.all(promises);
+  }
+
+  function resizeFile(files, attr, scope, ngModel) {
+    var resizeVal = upload.attrGetter('ngfResize', attr, scope);
+    if (!resizeVal || !upload.isResizeSupported() || !files.length) return upload.emptyPromise();
+    if (resizeVal instanceof Function) {
+      var defer = $q.defer();
+      return resizeVal(files).then(function (p) {
+        resizeWithParams(p, files, attr, scope, ngModel).then(function (r) {
+          defer.resolve(r);
+        }, function (e) {
+          defer.reject(e);
+        });
+      }, function (e) {
+        defer.reject(e);
+      });
+    } else {
+      return resizeWithParams(resizeVal, files, attr, scope, ngModel);
+    }
+  }
+
+  function resizeWithParams(params, files, attr, scope, ngModel) {
+    var promises = [upload.emptyPromise()];
+
+    function handleFile(f, i) {
+      if (f.type.indexOf('image') === 0) {
+        if (params.pattern && !upload.validatePattern(f, params.pattern)) return;
+        params.resizeIf = function (width, height) {
+          return upload.attrGetter('ngfResizeIf', attr, scope,
+            {$width: width, $height: height, $file: f});
+        };
+        var promise = upload.resize(f, params);
+        promises.push(promise);
+        promise.then(function (resizedFile) {
+          files.splice(i, 1, resizedFile);
+        }, function (e) {
+          f.$error = 'resize';
+          (f.$errorMessages = (f.$errorMessages || {})).resize = true;
+          f.$errorParam = (e ? (e.message ? e.message : e) + ': ' : '') + (f && f.name);
+          ngModel.$ngfValidations.push({name: 'resize', valid: false});
+          upload.applyModelValidation(ngModel, files);
+        });
+      }
+    }
+
+    for (var i = 0; i < files.length; i++) {
+      handleFile(files[i], i);
+    }
+    return $q.all(promises);
+  }
+
+  upload.updateModel = function (ngModel, attr, scope, fileChange, files, evt, noDelay) {
+    function update(files, invalidFiles, newFiles, dupFiles, isSingleModel) {
+      attr.$$ngfPrevValidFiles = files;
+      attr.$$ngfPrevInvalidFiles = invalidFiles;
+      var file = files && files.length ? files[0] : null;
+      var invalidFile = invalidFiles && invalidFiles.length ? invalidFiles[0] : null;
+
+      if (ngModel) {
+        upload.applyModelValidation(ngModel, files);
+        ngModel.$setViewValue(isSingleModel ? file : files);
+      }
+
+      if (fileChange) {
+        $parse(fileChange)(scope, {
+          $files: files,
+          $file: file,
+          $newFiles: newFiles,
+          $duplicateFiles: dupFiles,
+          $invalidFiles: invalidFiles,
+          $invalidFile: invalidFile,
+          $event: evt
+        });
+      }
+
+      var invalidModel = upload.attrGetter('ngfModelInvalid', attr);
+      if (invalidModel) {
+        $timeout(function () {
+          $parse(invalidModel).assign(scope, isSingleModel ? invalidFile : invalidFiles);
+        });
+      }
+      $timeout(function () {
+        // scope apply changes
+      });
+    }
+
+    var allNewFiles, dupFiles = [], prevValidFiles, prevInvalidFiles,
+      invalids = [], valids = [];
+
+    function removeDuplicates() {
+      function equals(f1, f2) {
+        return f1.name === f2.name && (f1.$ngfOrigSize || f1.size) === (f2.$ngfOrigSize || f2.size) &&
+          f1.type === f2.type;
+      }
+
+      function isInPrevFiles(f) {
+        var j;
+        for (j = 0; j < prevValidFiles.length; j++) {
+          if (equals(f, prevValidFiles[j])) {
+            return true;
+          }
+        }
+        for (j = 0; j < prevInvalidFiles.length; j++) {
+          if (equals(f, prevInvalidFiles[j])) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      if (files) {
+        allNewFiles = [];
+        dupFiles = [];
+        for (var i = 0; i < files.length; i++) {
+          if (isInPrevFiles(files[i])) {
+            dupFiles.push(files[i]);
+          } else {
+            allNewFiles.push(files[i]);
+          }
+        }
+      }
+    }
+
+    function toArray(v) {
+      return angular.isArray(v) ? v : [v];
+    }
+
+    function resizeAndUpdate() {
+      function updateModel() {
+        $timeout(function () {
+          update(keep ? prevValidFiles.concat(valids) : valids,
+            keep ? prevInvalidFiles.concat(invalids) : invalids,
+            files, dupFiles, isSingleModel);
+        }, options && options.debounce ? options.debounce.change || options.debounce : 0);
+      }
+
+      var resizingFiles = validateAfterResize ? allNewFiles : valids;
+      resizeFile(resizingFiles, attr, scope, ngModel).then(function () {
+        if (validateAfterResize) {
+          upload.validate(allNewFiles, keep ? prevValidFiles.length : 0, ngModel, attr, scope)
+            .then(function (validationResult) {
+              valids = validationResult.validsFiles;
+              invalids = validationResult.invalidsFiles;
+              updateModel();
+            });
+        } else {
+          updateModel();
+        }
+      }, function () {
+        for (var i = 0; i < resizingFiles.length; i++) {
+          var f = resizingFiles[i];
+          if (f.$error === 'resize') {
+            var index = valids.indexOf(f);
+            if (index > -1) {
+              valids.splice(index, 1);
+              invalids.push(f);
+            }
+            updateModel();
+          }
+        }
+      });
+    }
+
+    prevValidFiles = attr.$$ngfPrevValidFiles || [];
+    prevInvalidFiles = attr.$$ngfPrevInvalidFiles || [];
+    if (ngModel && ngModel.$modelValue) {
+      prevValidFiles = toArray(ngModel.$modelValue);
+    }
+
+    var keep = upload.attrGetter('ngfKeep', attr, scope);
+    allNewFiles = (files || []).slice(0);
+    if (keep === 'distinct' || upload.attrGetter('ngfKeepDistinct', attr, scope) === true) {
+      removeDuplicates(attr, scope);
+    }
+
+    var isSingleModel = !keep && !upload.attrGetter('ngfMultiple', attr, scope) && !upload.attrGetter('multiple', attr);
+
+    if (keep && !allNewFiles.length) return;
+
+    upload.attrGetter('ngfBeforeModelChange', attr, scope, {
+      $files: files,
+      $file: files && files.length ? files[0] : null,
+      $newFiles: allNewFiles,
+      $duplicateFiles: dupFiles,
+      $event: evt
+    });
+
+    var validateAfterResize = upload.attrGetter('ngfValidateAfterResize', attr, scope);
+
+    var options = upload.attrGetter('ngfModelOptions', attr, scope);
+    upload.validate(allNewFiles, keep ? prevValidFiles.length : 0, ngModel, attr, scope)
+      .then(function (validationResult) {
+      if (noDelay) {
+        update(allNewFiles, [], files, dupFiles, isSingleModel);
+      } else {
+        if ((!options || !options.allowInvalid) && !validateAfterResize) {
+          valids = validationResult.validFiles;
+          invalids = validationResult.invalidFiles;
+        } else {
+          valids = allNewFiles;
+        }
+        if (upload.attrGetter('ngfFixOrientation', attr, scope) && upload.isExifSupported()) {
+          applyExifRotations(valids, attr, scope).then(function () {
+            resizeAndUpdate();
+          });
+        } else {
+          resizeAndUpdate();
+        }
+      }
+    });
+  };
+
+  return upload;
+}]);
+
+ngFileUpload.directive('ngfSelect', ['$parse', '$timeout', '$compile', 'Upload', function ($parse, $timeout, $compile, Upload) {
+  var generatedElems = [];
+
+  function isDelayedClickSupported(ua) {
+    // fix for android native browser < 4.4 and safari windows
+    var m = ua.match(/Android[^\d]*(\d+)\.(\d+)/);
+    if (m && m.length > 2) {
+      var v = Upload.defaults.androidFixMinorVersion || 4;
+      return parseInt(m[1]) < 4 || (parseInt(m[1]) === v && parseInt(m[2]) < v);
+    }
+
+    // safari on windows
+    return ua.indexOf('Chrome') === -1 && /.*Windows.*Safari.*/.test(ua);
+  }
+
+  function linkFileSelect(scope, elem, attr, ngModel, $parse, $timeout, $compile, upload) {
+    /** @namespace attr.ngfSelect */
+    /** @namespace attr.ngfChange */
+    /** @namespace attr.ngModel */
+    /** @namespace attr.ngfModelOptions */
+    /** @namespace attr.ngfMultiple */
+    /** @namespace attr.ngfCapture */
+    /** @namespace attr.ngfValidate */
+    /** @namespace attr.ngfKeep */
+    var attrGetter = function (name, scope) {
+      return upload.attrGetter(name, attr, scope);
+    };
+
+    function isInputTypeFile() {
+      return elem[0].tagName.toLowerCase() === 'input' && attr.type && attr.type.toLowerCase() === 'file';
+    }
+
+    function fileChangeAttr() {
+      return attrGetter('ngfChange') || attrGetter('ngfSelect');
+    }
+
+    function changeFn(evt) {
+      if (upload.shouldUpdateOn('change', attr, scope)) {
+        var fileList = evt.__files_ || (evt.target && evt.target.files), files = [];
+        /* Handle duplicate call in  IE11 */
+        if (!fileList) return;
+        for (var i = 0; i < fileList.length; i++) {
+          files.push(fileList[i]);
+        }
+        upload.updateModel(ngModel, attr, scope, fileChangeAttr(),
+          files.length ? files : null, evt);
+      }
+    }
+
+    upload.registerModelChangeValidator(ngModel, attr, scope);
+
+    var unwatches = [];
+    if (attrGetter('ngfMultiple')) {
+      unwatches.push(scope.$watch(attrGetter('ngfMultiple'), function () {
+        fileElem.attr('multiple', attrGetter('ngfMultiple', scope));
+      }));
+    }
+    if (attrGetter('ngfCapture')) {
+      unwatches.push(scope.$watch(attrGetter('ngfCapture'), function () {
+        fileElem.attr('capture', attrGetter('ngfCapture', scope));
+      }));
+    }
+    if (attrGetter('ngfAccept')) {
+      unwatches.push(scope.$watch(attrGetter('ngfAccept'), function () {
+        fileElem.attr('accept', attrGetter('ngfAccept', scope));
+      }));
+    }
+    unwatches.push(attr.$observe('accept', function () {
+      fileElem.attr('accept', attrGetter('accept'));
+    }));
+    function bindAttrToFileInput(fileElem, label) {
+      function updateId(val) {
+        fileElem.attr('id', 'ngf-' + val);
+        label.attr('id', 'ngf-label-' + val);
+      }
+
+      for (var i = 0; i < elem[0].attributes.length; i++) {
+        var attribute = elem[0].attributes[i];
+        if (attribute.name !== 'type' && attribute.name !== 'class' && attribute.name !== 'style') {
+          if (attribute.name === 'id') {
+            updateId(attribute.value);
+            unwatches.push(attr.$observe('id', updateId));
+          } else {
+            fileElem.attr(attribute.name, (!attribute.value && (attribute.name === 'required' ||
+            attribute.name === 'multiple')) ? attribute.name : attribute.value);
+          }
+        }
+      }
+    }
+
+    function createFileInput() {
+      if (isInputTypeFile()) {
+        return elem;
+      }
+
+      var fileElem = angular.element('<input type="file">');
+
+      var label = angular.element('<label>upload</label>');
+      label.css('visibility', 'hidden').css('position', 'absolute').css('overflow', 'hidden')
+        .css('width', '0px').css('height', '0px').css('border', 'none')
+        .css('margin', '0px').css('padding', '0px').attr('tabindex', '-1');
+      bindAttrToFileInput(fileElem, label);
+
+      generatedElems.push({el: elem, ref: label});
+
+      document.body.appendChild(label.append(fileElem)[0]);
+
+      return fileElem;
+    }
+
+    function clickHandler(evt) {
+      if (elem.attr('disabled')) return false;
+      if (attrGetter('ngfSelectDisabled', scope)) return;
+
+      var r = detectSwipe(evt);
+      // prevent the click if it is a swipe
+      if (r != null) return r;
+
+      resetModel(evt);
+
+      // fix for md when the element is removed from the DOM and added back #460
+      try {
+        if (!isInputTypeFile() && !document.body.contains(fileElem[0])) {
+          generatedElems.push({el: elem, ref: fileElem.parent()});
+          document.body.appendChild(fileElem.parent()[0]);
+          fileElem.bind('change', changeFn);
+        }
+      } catch (e) {/*ignore*/
+      }
+
+      if (isDelayedClickSupported(navigator.userAgent)) {
+        setTimeout(function () {
+          fileElem[0].click();
+        }, 0);
+      } else {
+        fileElem[0].click();
+      }
+
+      return false;
+    }
+
+
+    var initialTouchStartY = 0;
+    var initialTouchStartX = 0;
+
+    function detectSwipe(evt) {
+      var touches = evt.changedTouches || (evt.originalEvent && evt.originalEvent.changedTouches);
+      if (touches) {
+        if (evt.type === 'touchstart') {
+          initialTouchStartX = touches[0].clientX;
+          initialTouchStartY = touches[0].clientY;
+          return true; // don't block event default
+        } else {
+          // prevent scroll from triggering event
+          if (evt.type === 'touchend') {
+            var currentX = touches[0].clientX;
+            var currentY = touches[0].clientY;
+            if ((Math.abs(currentX - initialTouchStartX) > 20) ||
+              (Math.abs(currentY - initialTouchStartY) > 20)) {
+              evt.stopPropagation();
+              evt.preventDefault();
+              return false;
+            }
+          }
+          return true;
+        }
+      }
+    }
+
+    var fileElem = elem;
+
+    function resetModel(evt) {
+      if (upload.shouldUpdateOn('click', attr, scope) && fileElem.val()) {
+        fileElem.val(null);
+        upload.updateModel(ngModel, attr, scope, fileChangeAttr(), null, evt, true);
+      }
+    }
+
+    if (!isInputTypeFile()) {
+      fileElem = createFileInput();
+    }
+    fileElem.bind('change', changeFn);
+
+    if (!isInputTypeFile()) {
+      elem.bind('click touchstart touchend', clickHandler);
+    } else {
+      elem.bind('click', resetModel);
+    }
+
+    function ie10SameFileSelectFix(evt) {
+      if (fileElem && !fileElem.attr('__ngf_ie10_Fix_')) {
+        if (!fileElem[0].parentNode) {
+          fileElem = null;
+          return;
+        }
+        evt.preventDefault();
+        evt.stopPropagation();
+        fileElem.unbind('click');
+        var clone = fileElem.clone();
+        fileElem.replaceWith(clone);
+        fileElem = clone;
+        fileElem.attr('__ngf_ie10_Fix_', 'true');
+        fileElem.bind('change', changeFn);
+        fileElem.bind('click', ie10SameFileSelectFix);
+        fileElem[0].click();
+        return false;
+      } else {
+        fileElem.removeAttr('__ngf_ie10_Fix_');
+      }
+    }
+
+    if (navigator.appVersion.indexOf('MSIE 10') !== -1) {
+      fileElem.bind('click', ie10SameFileSelectFix);
+    }
+
+    if (ngModel) ngModel.$formatters.push(function (val) {
+      if (val == null || val.length === 0) {
+        if (fileElem.val()) {
+          fileElem.val(null);
+        }
+      }
+      return val;
+    });
+
+    scope.$on('$destroy', function () {
+      if (!isInputTypeFile()) fileElem.parent().remove();
+      angular.forEach(unwatches, function (unwatch) {
+        unwatch();
+      });
+    });
+
+    $timeout(function () {
+      for (var i = 0; i < generatedElems.length; i++) {
+        var g = generatedElems[i];
+        if (!document.body.contains(g.el[0])) {
+          generatedElems.splice(i, 1);
+          g.ref.remove();
+        }
+      }
+    });
+
+    if (window.FileAPI && window.FileAPI.ngfFixIE) {
+      window.FileAPI.ngfFixIE(elem, fileElem, changeFn);
+    }
+  }
+
+  return {
+    restrict: 'AEC',
+    require: '?ngModel',
+    link: function (scope, elem, attr, ngModel) {
+      linkFileSelect(scope, elem, attr, ngModel, $parse, $timeout, $compile, Upload);
+    }
+  };
+}]);
+
+(function () {
+
+  ngFileUpload.service('UploadDataUrl', ['UploadBase', '$timeout', '$q', function (UploadBase, $timeout, $q) {
+    var upload = UploadBase;
+    upload.base64DataUrl = function (file) {
+      if (angular.isArray(file)) {
+        var d = $q.defer(), count = 0;
+        angular.forEach(file, function (f) {
+          upload.dataUrl(f, true)['finally'](function () {
+            count++;
+            if (count === file.length) {
+              var urls = [];
+              angular.forEach(file, function (ff) {
+                urls.push(ff.$ngfDataUrl);
+              });
+              d.resolve(urls, file);
+            }
+          });
+        });
+        return d.promise;
+      } else {
+        return upload.dataUrl(file, true);
+      }
+    };
+    upload.dataUrl = function (file, disallowObjectUrl) {
+      if (!file) return upload.emptyPromise(file, file);
+      if ((disallowObjectUrl && file.$ngfDataUrl != null) || (!disallowObjectUrl && file.$ngfBlobUrl != null)) {
+        return upload.emptyPromise(disallowObjectUrl ? file.$ngfDataUrl : file.$ngfBlobUrl, file);
+      }
+      var p = disallowObjectUrl ? file.$$ngfDataUrlPromise : file.$$ngfBlobUrlPromise;
+      if (p) return p;
+
+      var deferred = $q.defer();
+      $timeout(function () {
+        if (window.FileReader && file &&
+          (!window.FileAPI || navigator.userAgent.indexOf('MSIE 8') === -1 || file.size < 20000) &&
+          (!window.FileAPI || navigator.userAgent.indexOf('MSIE 9') === -1 || file.size < 4000000)) {
+          //prefer URL.createObjectURL for handling refrences to files of all sizes
+          //since it doesn´t build a large string in memory
+          var URL = window.URL || window.webkitURL;
+          if (URL && URL.createObjectURL && !disallowObjectUrl) {
+            var url;
+            try {
+              url = URL.createObjectURL(file);
+            } catch (e) {
+              $timeout(function () {
+                file.$ngfBlobUrl = '';
+                deferred.reject();
+              });
+              return;
+            }
+            $timeout(function () {
+              file.$ngfBlobUrl = url;
+              if (url) {
+                deferred.resolve(url, file);
+                upload.blobUrls = upload.blobUrls || [];
+                upload.blobUrlsTotalSize = upload.blobUrlsTotalSize || 0;
+                upload.blobUrls.push({url: url, size: file.size});
+                upload.blobUrlsTotalSize += file.size || 0;
+                var maxMemory = upload.defaults.blobUrlsMaxMemory || 268435456;
+                var maxLength = upload.defaults.blobUrlsMaxQueueSize || 200;
+                while ((upload.blobUrlsTotalSize > maxMemory || upload.blobUrls.length > maxLength) && upload.blobUrls.length > 1) {
+                  var obj = upload.blobUrls.splice(0, 1)[0];
+                  URL.revokeObjectURL(obj.url);
+                  upload.blobUrlsTotalSize -= obj.size;
+                }
+              }
+            });
+          } else {
+            var fileReader = new FileReader();
+            fileReader.onload = function (e) {
+              $timeout(function () {
+                file.$ngfDataUrl = e.target.result;
+                deferred.resolve(e.target.result, file);
+                $timeout(function () {
+                  delete file.$ngfDataUrl;
+                }, 1000);
+              });
+            };
+            fileReader.onerror = function () {
+              $timeout(function () {
+                file.$ngfDataUrl = '';
+                deferred.reject();
+              });
+            };
+            fileReader.readAsDataURL(file);
+          }
+        } else {
+          $timeout(function () {
+            file[disallowObjectUrl ? '$ngfDataUrl' : '$ngfBlobUrl'] = '';
+            deferred.reject();
+          });
+        }
+      });
+
+      if (disallowObjectUrl) {
+        p = file.$$ngfDataUrlPromise = deferred.promise;
+      } else {
+        p = file.$$ngfBlobUrlPromise = deferred.promise;
+      }
+      p['finally'](function () {
+        delete file[disallowObjectUrl ? '$$ngfDataUrlPromise' : '$$ngfBlobUrlPromise'];
+      });
+      return p;
+    };
+    return upload;
+  }]);
+
+  function getTagType(el) {
+    if (el.tagName.toLowerCase() === 'img') return 'image';
+    if (el.tagName.toLowerCase() === 'audio') return 'audio';
+    if (el.tagName.toLowerCase() === 'video') return 'video';
+    return /./;
+  }
+
+  function linkFileDirective(Upload, $timeout, scope, elem, attr, directiveName, resizeParams, isBackground) {
+    function constructDataUrl(file) {
+      var disallowObjectUrl = Upload.attrGetter('ngfNoObjectUrl', attr, scope);
+      Upload.dataUrl(file, disallowObjectUrl)['finally'](function () {
+        $timeout(function () {
+          var src = (disallowObjectUrl ? file.$ngfDataUrl : file.$ngfBlobUrl) || file.$ngfDataUrl;
+          if (isBackground) {
+            elem.css('background-image', 'url(\'' + (src || '') + '\')');
+          } else {
+            elem.attr('src', src);
+          }
+          if (src) {
+            elem.removeClass('ng-hide');
+          } else {
+            elem.addClass('ng-hide');
+          }
+        });
+      });
+    }
+
+    $timeout(function () {
+      var unwatch = scope.$watch(attr[directiveName], function (file) {
+        var size = resizeParams;
+        if (directiveName === 'ngfThumbnail') {
+          if (!size) {
+            size = {
+              width: elem[0].naturalWidth || elem[0].clientWidth,
+              height: elem[0].naturalHeight || elem[0].clientHeight
+            };
+          }
+          if (size.width === 0 && window.getComputedStyle) {
+            var style = getComputedStyle(elem[0]);
+            if (style.width && style.width.indexOf('px') > -1 && style.height && style.height.indexOf('px') > -1) {
+              size = {
+                width: parseInt(style.width.slice(0, -2)),
+                height: parseInt(style.height.slice(0, -2))
+              };
+            }
+          }
+        }
+
+        if (angular.isString(file)) {
+          elem.removeClass('ng-hide');
+          if (isBackground) {
+            return elem.css('background-image', 'url(\'' + file + '\')');
+          } else {
+            return elem.attr('src', file);
+          }
+        }
+        if (file && file.type && file.type.search(getTagType(elem[0])) === 0 &&
+          (!isBackground || file.type.indexOf('image') === 0)) {
+          if (size && Upload.isResizeSupported()) {
+            size.resizeIf = function (width, height) {
+              return Upload.attrGetter('ngfResizeIf', attr, scope,
+                {$width: width, $height: height, $file: file});
+            };
+            Upload.resize(file, size).then(
+              function (f) {
+                constructDataUrl(f);
+              }, function (e) {
+                throw e;
+              }
+            );
+          } else {
+            constructDataUrl(file);
+          }
+        } else {
+          elem.addClass('ng-hide');
+        }
+      });
+
+      scope.$on('$destroy', function () {
+        unwatch();
+      });
+    });
+  }
+
+
+  /** @namespace attr.ngfSrc */
+  /** @namespace attr.ngfNoObjectUrl */
+  ngFileUpload.directive('ngfSrc', ['Upload', '$timeout', function (Upload, $timeout) {
+    return {
+      restrict: 'AE',
+      link: function (scope, elem, attr) {
+        linkFileDirective(Upload, $timeout, scope, elem, attr, 'ngfSrc',
+          Upload.attrGetter('ngfResize', attr, scope), false);
+      }
+    };
+  }]);
+
+  /** @namespace attr.ngfBackground */
+  /** @namespace attr.ngfNoObjectUrl */
+  ngFileUpload.directive('ngfBackground', ['Upload', '$timeout', function (Upload, $timeout) {
+    return {
+      restrict: 'AE',
+      link: function (scope, elem, attr) {
+        linkFileDirective(Upload, $timeout, scope, elem, attr, 'ngfBackground',
+          Upload.attrGetter('ngfResize', attr, scope), true);
+      }
+    };
+  }]);
+
+  /** @namespace attr.ngfThumbnail */
+  /** @namespace attr.ngfAsBackground */
+  /** @namespace attr.ngfSize */
+  /** @namespace attr.ngfNoObjectUrl */
+  ngFileUpload.directive('ngfThumbnail', ['Upload', '$timeout', function (Upload, $timeout) {
+    return {
+      restrict: 'AE',
+      link: function (scope, elem, attr) {
+        var size = Upload.attrGetter('ngfSize', attr, scope);
+        linkFileDirective(Upload, $timeout, scope, elem, attr, 'ngfThumbnail', size,
+          Upload.attrGetter('ngfAsBackground', attr, scope));
+      }
+    };
+  }]);
+
+  ngFileUpload.config(['$compileProvider', function ($compileProvider) {
+    if ($compileProvider.imgSrcSanitizationWhitelist) $compileProvider.imgSrcSanitizationWhitelist(/^\s*(https?|ftp|mailto|tel|webcal|local|file|data|blob):/);
+    if ($compileProvider.aHrefSanitizationWhitelist) $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|tel|webcal|local|file|data|blob):/);
+  }]);
+
+  ngFileUpload.filter('ngfDataUrl', ['UploadDataUrl', '$sce', function (UploadDataUrl, $sce) {
+    return function (file, disallowObjectUrl, trustedUrl) {
+      if (angular.isString(file)) {
+        return $sce.trustAsResourceUrl(file);
+      }
+      var src = file && ((disallowObjectUrl ? file.$ngfDataUrl : file.$ngfBlobUrl) || file.$ngfDataUrl);
+      if (file && !src) {
+        if (!file.$ngfDataUrlFilterInProgress && angular.isObject(file)) {
+          file.$ngfDataUrlFilterInProgress = true;
+          UploadDataUrl.dataUrl(file, disallowObjectUrl);
+        }
+        return '';
+      }
+      if (file) delete file.$ngfDataUrlFilterInProgress;
+      return (file && src ? (trustedUrl ? $sce.trustAsResourceUrl(src) : src) : file) || '';
+    };
+  }]);
+
+})();
+
+ngFileUpload.service('UploadValidate', ['UploadDataUrl', '$q', '$timeout', function (UploadDataUrl, $q, $timeout) {
+  var upload = UploadDataUrl;
+
+  function globStringToRegex(str) {
+    var regexp = '', excludes = [];
+    if (str.length > 2 && str[0] === '/' && str[str.length - 1] === '/') {
+      regexp = str.substring(1, str.length - 1);
+    } else {
+      var split = str.split(',');
+      if (split.length > 1) {
+        for (var i = 0; i < split.length; i++) {
+          var r = globStringToRegex(split[i]);
+          if (r.regexp) {
+            regexp += '(' + r.regexp + ')';
+            if (i < split.length - 1) {
+              regexp += '|';
+            }
+          } else {
+            excludes = excludes.concat(r.excludes);
+          }
+        }
+      } else {
+        if (str.indexOf('!') === 0) {
+          excludes.push('^((?!' + globStringToRegex(str.substring(1)).regexp + ').)*$');
+        } else {
+          if (str.indexOf('.') === 0) {
+            str = '*' + str;
+          }
+          regexp = '^' + str.replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\-]', 'g'), '\\$&') + '$';
+          regexp = regexp.replace(/\\\*/g, '.*').replace(/\\\?/g, '.');
+        }
+      }
+    }
+    return {regexp: regexp, excludes: excludes};
+  }
+
+  upload.validatePattern = function (file, val) {
+    if (!val) {
+      return true;
+    }
+    var pattern = globStringToRegex(val), valid = true;
+    if (pattern.regexp && pattern.regexp.length) {
+      var regexp = new RegExp(pattern.regexp, 'i');
+      valid = (file.type != null && regexp.test(file.type)) ||
+        (file.name != null && regexp.test(file.name));
+    }
+    var len = pattern.excludes.length;
+    while (len--) {
+      var exclude = new RegExp(pattern.excludes[len], 'i');
+      valid = valid && (file.type == null || exclude.test(file.type)) &&
+        (file.name == null || exclude.test(file.name));
+    }
+    return valid;
+  };
+
+  upload.ratioToFloat = function (val) {
+    var r = val.toString(), xIndex = r.search(/[x:]/i);
+    if (xIndex > -1) {
+      r = parseFloat(r.substring(0, xIndex)) / parseFloat(r.substring(xIndex + 1));
+    } else {
+      r = parseFloat(r);
+    }
+    return r;
+  };
+
+  upload.registerModelChangeValidator = function (ngModel, attr, scope) {
+    if (ngModel) {
+      ngModel.$formatters.push(function (files) {
+        if (ngModel.$dirty) {
+          var filesArray = files;
+          if (files && !angular.isArray(files)) {
+            filesArray = [files];
+          }
+          upload.validate(filesArray, 0, ngModel, attr, scope).then(function () {
+            upload.applyModelValidation(ngModel, filesArray);
+          });
+        }
+        return files;
+      });
+    }
+  };
+
+  function markModelAsDirty(ngModel, files) {
+    if (files != null && !ngModel.$dirty) {
+      if (ngModel.$setDirty) {
+        ngModel.$setDirty();
+      } else {
+        ngModel.$dirty = true;
+      }
+    }
+  }
+
+  upload.applyModelValidation = function (ngModel, files) {
+    markModelAsDirty(ngModel, files);
+    angular.forEach(ngModel.$ngfValidations, function (validation) {
+      ngModel.$setValidity(validation.name, validation.valid);
+    });
+  };
+
+  upload.getValidationAttr = function (attr, scope, name, validationName, file) {
+    var dName = 'ngf' + name[0].toUpperCase() + name.substr(1);
+    var val = upload.attrGetter(dName, attr, scope, {$file: file});
+    if (val == null) {
+      val = upload.attrGetter('ngfValidate', attr, scope, {$file: file});
+      if (val) {
+        var split = (validationName || name).split('.');
+        val = val[split[0]];
+        if (split.length > 1) {
+          val = val && val[split[1]];
+        }
+      }
+    }
+    return val;
+  };
+
+  upload.validate = function (files, prevLength, ngModel, attr, scope) {
+    ngModel = ngModel || {};
+    ngModel.$ngfValidations = ngModel.$ngfValidations || [];
+
+    angular.forEach(ngModel.$ngfValidations, function (v) {
+      v.valid = true;
+    });
+
+    var attrGetter = function (name, params) {
+      return upload.attrGetter(name, attr, scope, params);
+    };
+
+    var ignoredErrors = (upload.attrGetter('ngfIgnoreInvalid', attr, scope) || '').split(' ');
+    var runAllValidation = upload.attrGetter('ngfRunAllValidations', attr, scope);
+
+    if (files == null || files.length === 0) {
+      return upload.emptyPromise({'validFiles': files, 'invalidFiles': []});
+    }
+
+    files = files.length === undefined ? [files] : files.slice(0);
+    var invalidFiles = [];
+
+    function validateSync(name, validationName, fn) {
+      if (files) {
+        var i = files.length, valid = null;
+        while (i--) {
+          var file = files[i];
+          if (file) {
+            var val = upload.getValidationAttr(attr, scope, name, validationName, file);
+            if (val != null) {
+              if (!fn(file, val, i)) {
+                if (ignoredErrors.indexOf(name) === -1) {
+                  file.$error = name;
+                  (file.$errorMessages = (file.$errorMessages || {}))[name] = true;
+                  file.$errorParam = val;
+                  if (invalidFiles.indexOf(file) === -1) {
+                    invalidFiles.push(file);
+                  }
+                  if (!runAllValidation) {
+                    files.splice(i, 1);
+                  }
+                  valid = false;
+                } else {
+                  files.splice(i, 1);
+                }
+              }
+            }
+          }
+        }
+        if (valid !== null) {
+          ngModel.$ngfValidations.push({name: name, valid: valid});
+        }
+      }
+    }
+
+    validateSync('pattern', null, upload.validatePattern);
+    validateSync('minSize', 'size.min', function (file, val) {
+      return file.size + 0.1 >= upload.translateScalars(val);
+    });
+    validateSync('maxSize', 'size.max', function (file, val) {
+      return file.size - 0.1 <= upload.translateScalars(val);
+    });
+    var totalSize = 0;
+    validateSync('maxTotalSize', null, function (file, val) {
+      totalSize += file.size;
+      if (totalSize > upload.translateScalars(val)) {
+        files.splice(0, files.length);
+        return false;
+      }
+      return true;
+    });
+
+    validateSync('validateFn', null, function (file, r) {
+      return r === true || r === null || r === '';
+    });
+
+    if (!files.length) {
+      return upload.emptyPromise({'validFiles': [], 'invalidFiles': invalidFiles});
+    }
+
+    function validateAsync(name, validationName, type, asyncFn, fn) {
+      function resolveResult(defer, file, val) {
+        function resolveInternal(fn) {
+          if (fn()) {
+            if (ignoredErrors.indexOf(name) === -1) {
+              file.$error = name;
+              (file.$errorMessages = (file.$errorMessages || {}))[name] = true;
+              file.$errorParam = val;
+              if (invalidFiles.indexOf(file) === -1) {
+                invalidFiles.push(file);
+              }
+              if (!runAllValidation) {
+                var i = files.indexOf(file);
+                if (i > -1) files.splice(i, 1);
+              }
+              defer.resolve(false);
+            } else {
+              var j = files.indexOf(file);
+              if (j > -1) files.splice(j, 1);
+              defer.resolve(true);
+            }
+          } else {
+            defer.resolve(true);
+          }
+        }
+
+        if (val != null) {
+          asyncFn(file, val).then(function (d) {
+            resolveInternal(function () {
+              return !fn(d, val);
+            });
+          }, function () {
+            resolveInternal(function () {
+              return attrGetter('ngfValidateForce', {$file: file});
+            });
+          });
+        } else {
+          defer.resolve(true);
+        }
+      }
+
+      var promises = [upload.emptyPromise(true)];
+      if (files) {
+        files = files.length === undefined ? [files] : files;
+        angular.forEach(files, function (file) {
+          var defer = $q.defer();
+          promises.push(defer.promise);
+          if (type && (file.type == null || file.type.search(type) !== 0)) {
+            defer.resolve(true);
+            return;
+          }
+          if (name === 'dimensions' && upload.attrGetter('ngfDimensions', attr) != null) {
+            upload.imageDimensions(file).then(function (d) {
+              resolveResult(defer, file,
+                attrGetter('ngfDimensions', {$file: file, $width: d.width, $height: d.height}));
+            }, function () {
+              defer.resolve(false);
+            });
+          } else if (name === 'duration' && upload.attrGetter('ngfDuration', attr) != null) {
+            upload.mediaDuration(file).then(function (d) {
+              resolveResult(defer, file,
+                attrGetter('ngfDuration', {$file: file, $duration: d}));
+            }, function () {
+              defer.resolve(false);
+            });
+          } else {
+            resolveResult(defer, file,
+              upload.getValidationAttr(attr, scope, name, validationName, file));
+          }
+        });
+      }
+      var deffer = $q.defer();
+      $q.all(promises).then(function (values) {
+        var isValid = true;
+        for (var i = 0; i < values.length; i++) {
+          if (!values[i]) {
+            isValid = false;
+            break;
+          }
+        }
+        ngModel.$ngfValidations.push({name: name, valid: isValid});
+        deffer.resolve(isValid);
+      });
+      return deffer.promise;
+    }
+
+    var deffer = $q.defer();
+    var promises = [];
+
+    promises.push(validateAsync('maxHeight', 'height.max', /image/,
+      this.imageDimensions, function (d, val) {
+        return d.height <= val;
+      }));
+    promises.push(validateAsync('minHeight', 'height.min', /image/,
+      this.imageDimensions, function (d, val) {
+        return d.height >= val;
+      }));
+    promises.push(validateAsync('maxWidth', 'width.max', /image/,
+      this.imageDimensions, function (d, val) {
+        return d.width <= val;
+      }));
+    promises.push(validateAsync('minWidth', 'width.min', /image/,
+      this.imageDimensions, function (d, val) {
+        return d.width >= val;
+      }));
+    promises.push(validateAsync('dimensions', null, /image/,
+      function (file, val) {
+        return upload.emptyPromise(val);
+      }, function (r) {
+        return r;
+      }));
+    promises.push(validateAsync('ratio', null, /image/,
+      this.imageDimensions, function (d, val) {
+        var split = val.toString().split(','), valid = false;
+        for (var i = 0; i < split.length; i++) {
+          if (Math.abs((d.width / d.height) - upload.ratioToFloat(split[i])) < 0.01) {
+            valid = true;
+          }
+        }
+        return valid;
+      }));
+    promises.push(validateAsync('maxRatio', 'ratio.max', /image/,
+      this.imageDimensions, function (d, val) {
+        return (d.width / d.height) - upload.ratioToFloat(val) < 0.0001;
+      }));
+    promises.push(validateAsync('minRatio', 'ratio.min', /image/,
+      this.imageDimensions, function (d, val) {
+        return (d.width / d.height) - upload.ratioToFloat(val) > -0.0001;
+      }));
+    promises.push(validateAsync('maxDuration', 'duration.max', /audio|video/,
+      this.mediaDuration, function (d, val) {
+        return d <= upload.translateScalars(val);
+      }));
+    promises.push(validateAsync('minDuration', 'duration.min', /audio|video/,
+      this.mediaDuration, function (d, val) {
+        return d >= upload.translateScalars(val);
+      }));
+    promises.push(validateAsync('duration', null, /audio|video/,
+      function (file, val) {
+        return upload.emptyPromise(val);
+      }, function (r) {
+        return r;
+      }));
+
+    promises.push(validateAsync('validateAsyncFn', null, null,
+      function (file, val) {
+        return val;
+      }, function (r) {
+        return r === true || r === null || r === '';
+      }));
+
+    $q.all(promises).then(function () {
+
+      if (runAllValidation) {
+        for (var i = 0; i < files.length; i++) {
+          var file = files[i];
+          if (file.$error) {
+            files.splice(i--, 1);
+          }
+        }
+      }
+
+      runAllValidation = false;
+      validateSync('maxFiles', null, function (file, val, i) {
+        return prevLength + i < val;
+      });
+
+      deffer.resolve({'validFiles': files, 'invalidFiles': invalidFiles});
+    });
+    return deffer.promise;
+  };
+
+  upload.imageDimensions = function (file) {
+    if (file.$ngfWidth && file.$ngfHeight) {
+      var d = $q.defer();
+      $timeout(function () {
+        d.resolve({width: file.$ngfWidth, height: file.$ngfHeight});
+      });
+      return d.promise;
+    }
+    if (file.$ngfDimensionPromise) return file.$ngfDimensionPromise;
+
+    var deferred = $q.defer();
+    $timeout(function () {
+      if (file.type.indexOf('image') !== 0) {
+        deferred.reject('not image');
+        return;
+      }
+      upload.dataUrl(file).then(function (dataUrl) {
+        var img = angular.element('<img>').attr('src', dataUrl)
+          .css('visibility', 'hidden').css('position', 'fixed')
+          .css('max-width', 'none !important').css('max-height', 'none !important');
+
+        function success() {
+          var width = img[0].naturalWidth || img[0].clientWidth;
+          var height = img[0].naturalHeight || img[0].clientHeight;
+          img.remove();
+          file.$ngfWidth = width;
+          file.$ngfHeight = height;
+          deferred.resolve({width: width, height: height});
+        }
+
+        function error() {
+          img.remove();
+          deferred.reject('load error');
+        }
+
+        img.on('load', success);
+        img.on('error', error);
+
+        var secondsCounter = 0;
+        function checkLoadErrorInCaseOfNoCallback() {
+          $timeout(function () {
+            if (img[0].parentNode) {
+              if (img[0].clientWidth) {
+                success();
+              } else if (secondsCounter++ > 10) {
+                error();
+              } else {
+                checkLoadErrorInCaseOfNoCallback();
+              }
+            }
+          }, 1000);
+        }
+
+        checkLoadErrorInCaseOfNoCallback();
+
+        angular.element(document.getElementsByTagName('body')[0]).append(img);
+      }, function () {
+        deferred.reject('load error');
+      });
+    });
+
+    file.$ngfDimensionPromise = deferred.promise;
+    file.$ngfDimensionPromise['finally'](function () {
+      delete file.$ngfDimensionPromise;
+    });
+    return file.$ngfDimensionPromise;
+  };
+
+  upload.mediaDuration = function (file) {
+    if (file.$ngfDuration) {
+      var d = $q.defer();
+      $timeout(function () {
+        d.resolve(file.$ngfDuration);
+      });
+      return d.promise;
+    }
+    if (file.$ngfDurationPromise) return file.$ngfDurationPromise;
+
+    var deferred = $q.defer();
+    $timeout(function () {
+      if (file.type.indexOf('audio') !== 0 && file.type.indexOf('video') !== 0) {
+        deferred.reject('not media');
+        return;
+      }
+      upload.dataUrl(file).then(function (dataUrl) {
+        var el = angular.element(file.type.indexOf('audio') === 0 ? '<audio>' : '<video>')
+          .attr('src', dataUrl).css('visibility', 'none').css('position', 'fixed');
+
+        function success() {
+          var duration = el[0].duration;
+          file.$ngfDuration = duration;
+          el.remove();
+          deferred.resolve(duration);
+        }
+
+        function error() {
+          el.remove();
+          deferred.reject('load error');
+        }
+
+        el.on('loadedmetadata', success);
+        el.on('error', error);
+        var count = 0;
+
+        function checkLoadError() {
+          $timeout(function () {
+            if (el[0].parentNode) {
+              if (el[0].duration) {
+                success();
+              } else if (count > 10) {
+                error();
+              } else {
+                checkLoadError();
+              }
+            }
+          }, 1000);
+        }
+
+        checkLoadError();
+
+        angular.element(document.body).append(el);
+      }, function () {
+        deferred.reject('load error');
+      });
+    });
+
+    file.$ngfDurationPromise = deferred.promise;
+    file.$ngfDurationPromise['finally'](function () {
+      delete file.$ngfDurationPromise;
+    });
+    return file.$ngfDurationPromise;
+  };
+  return upload;
+}
+]);
+
+ngFileUpload.service('UploadResize', ['UploadValidate', '$q', function (UploadValidate, $q) {
+  var upload = UploadValidate;
+
+  /**
+   * Conserve aspect ratio of the original region. Useful when shrinking/enlarging
+   * images to fit into a certain area.
+   * Source:  http://stackoverflow.com/a/14731922
+   *
+   * @param {Number} srcWidth Source area width
+   * @param {Number} srcHeight Source area height
+   * @param {Number} maxWidth Nestable area maximum available width
+   * @param {Number} maxHeight Nestable area maximum available height
+   * @return {Object} { width, height }
+   */
+  var calculateAspectRatioFit = function (srcWidth, srcHeight, maxWidth, maxHeight, centerCrop) {
+    var ratio = centerCrop ? Math.max(maxWidth / srcWidth, maxHeight / srcHeight) :
+      Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
+    return {
+      width: srcWidth * ratio, height: srcHeight * ratio,
+      marginX: srcWidth * ratio - maxWidth, marginY: srcHeight * ratio - maxHeight
+    };
+  };
+
+  // Extracted from https://github.com/romelgomez/angular-firebase-image-upload/blob/master/app/scripts/fileUpload.js#L89
+  var resize = function (imagen, width, height, quality, type, ratio, centerCrop, resizeIf) {
+    var deferred = $q.defer();
+    var canvasElement = document.createElement('canvas');
+    var imageElement = document.createElement('img');
+    imageElement.setAttribute('style', 'visibility:hidden;position:fixed;z-index:-100000');
+    document.body.appendChild(imageElement);
+
+    imageElement.onload = function () {
+      var imgWidth = imageElement.width, imgHeight = imageElement.height;
+      imageElement.parentNode.removeChild(imageElement);
+      if (resizeIf != null && resizeIf(imgWidth, imgHeight) === false) {
+        deferred.reject('resizeIf');
+        return;
+      }
+      try {
+        if (ratio) {
+          var ratioFloat = upload.ratioToFloat(ratio);
+          var imgRatio = imgWidth / imgHeight;
+          if (imgRatio < ratioFloat) {
+            width = imgWidth;
+            height = width / ratioFloat;
+          } else {
+            height = imgHeight;
+            width = height * ratioFloat;
+          }
+        }
+        if (!width) {
+          width = imgWidth;
+        }
+        if (!height) {
+          height = imgHeight;
+        }
+        var dimensions = calculateAspectRatioFit(imgWidth, imgHeight, width, height, centerCrop);
+        canvasElement.width = Math.min(dimensions.width, width);
+        canvasElement.height = Math.min(dimensions.height, height);
+        var context = canvasElement.getContext('2d');
+        context.drawImage(imageElement,
+          Math.min(0, -dimensions.marginX / 2), Math.min(0, -dimensions.marginY / 2),
+          dimensions.width, dimensions.height);
+        deferred.resolve(canvasElement.toDataURL(type || 'image/WebP', quality || 0.934));
+      } catch (e) {
+        deferred.reject(e);
+      }
+    };
+    imageElement.onerror = function () {
+      imageElement.parentNode.removeChild(imageElement);
+      deferred.reject();
+    };
+    imageElement.src = imagen;
+    return deferred.promise;
+  };
+
+  upload.dataUrltoBlob = function (dataurl, name, origSize) {
+    var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+      bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    var blob = new window.Blob([u8arr], {type: mime});
+    blob.name = name;
+    blob.$ngfOrigSize = origSize;
+    return blob;
+  };
+
+  upload.isResizeSupported = function () {
+    var elem = document.createElement('canvas');
+    return window.atob && elem.getContext && elem.getContext('2d') && window.Blob;
+  };
+
+  if (upload.isResizeSupported()) {
+    // add name getter to the blob constructor prototype
+    Object.defineProperty(window.Blob.prototype, 'name', {
+      get: function () {
+        return this.$ngfName;
+      },
+      set: function (v) {
+        this.$ngfName = v;
+      },
+      configurable: true
+    });
+  }
+
+  upload.resize = function (file, options) {
+    if (file.type.indexOf('image') !== 0) return upload.emptyPromise(file);
+
+    var deferred = $q.defer();
+    upload.dataUrl(file, true).then(function (url) {
+      resize(url, options.width, options.height, options.quality, options.type || file.type,
+        options.ratio, options.centerCrop, options.resizeIf)
+        .then(function (dataUrl) {
+          if (file.type === 'image/jpeg' && options.restoreExif !== false) {
+            try {
+              dataUrl = upload.restoreExif(url, dataUrl);
+            } catch (e) {
+              setTimeout(function () {throw e;}, 1);
+            }
+          }
+          try {
+            var blob = upload.dataUrltoBlob(dataUrl, file.name, file.size);
+            deferred.resolve(blob);
+          } catch (e) {
+            deferred.reject(e);
+          }
+        }, function (r) {
+          if (r === 'resizeIf') {
+            deferred.resolve(file);
+          }
+          deferred.reject(r);
+        });
+    }, function (e) {
+      deferred.reject(e);
+    });
+    return deferred.promise;
+  };
+
+  return upload;
+}]);
+
+(function () {
+  ngFileUpload.directive('ngfDrop', ['$parse', '$timeout', '$window', 'Upload', '$http', '$q',
+    function ($parse, $timeout, $window, Upload, $http, $q) {
+      return {
+        restrict: 'AEC',
+        require: '?ngModel',
+        link: function (scope, elem, attr, ngModel) {
+          linkDrop(scope, elem, attr, ngModel, $parse, $timeout, $window, Upload, $http, $q);
+        }
+      };
+    }]);
+
+  ngFileUpload.directive('ngfNoFileDrop', function () {
+    return function (scope, elem) {
+      if (dropAvailable()) elem.css('display', 'none');
+    };
+  });
+
+  ngFileUpload.directive('ngfDropAvailable', ['$parse', '$timeout', 'Upload', function ($parse, $timeout, Upload) {
+    return function (scope, elem, attr) {
+      if (dropAvailable()) {
+        var model = $parse(Upload.attrGetter('ngfDropAvailable', attr));
+        $timeout(function () {
+          model(scope);
+          if (model.assign) {
+            model.assign(scope, true);
+          }
+        });
+      }
+    };
+  }]);
+
+  function linkDrop(scope, elem, attr, ngModel, $parse, $timeout, $window, upload, $http, $q) {
+    var available = dropAvailable();
+
+    var attrGetter = function (name, scope, params) {
+      return upload.attrGetter(name, attr, scope, params);
+    };
+
+    if (attrGetter('dropAvailable')) {
+      $timeout(function () {
+        if (scope[attrGetter('dropAvailable')]) {
+          scope[attrGetter('dropAvailable')].value = available;
+        } else {
+          scope[attrGetter('dropAvailable')] = available;
+        }
+      });
+    }
+    if (!available) {
+      if (attrGetter('ngfHideOnDropNotAvailable', scope) === true) {
+        elem.css('display', 'none');
+      }
+      return;
+    }
+
+    function isDisabled() {
+      return elem.attr('disabled') || attrGetter('ngfDropDisabled', scope);
+    }
+
+    if (attrGetter('ngfSelect') == null) {
+      upload.registerModelChangeValidator(ngModel, attr, scope);
+    }
+
+    var leaveTimeout = null;
+    var stopPropagation = $parse(attrGetter('ngfStopPropagation'));
+    var dragOverDelay = 1;
+    var actualDragOverClass;
+
+    elem[0].addEventListener('dragover', function (evt) {
+      if (isDisabled() || !upload.shouldUpdateOn('drop', attr, scope)) return;
+      evt.preventDefault();
+      if (stopPropagation(scope)) evt.stopPropagation();
+      // handling dragover events from the Chrome download bar
+      if (navigator.userAgent.indexOf('Chrome') > -1) {
+        var b = evt.dataTransfer.effectAllowed;
+        evt.dataTransfer.dropEffect = ('move' === b || 'linkMove' === b) ? 'move' : 'copy';
+      }
+      $timeout.cancel(leaveTimeout);
+      if (!actualDragOverClass) {
+        actualDragOverClass = 'C';
+        calculateDragOverClass(scope, attr, evt, function (clazz) {
+          actualDragOverClass = clazz;
+          elem.addClass(actualDragOverClass);
+          attrGetter('ngfDrag', scope, {$isDragging: true, $class: actualDragOverClass, $event: evt});
+        });
+      }
+    }, false);
+    elem[0].addEventListener('dragenter', function (evt) {
+      if (isDisabled() || !upload.shouldUpdateOn('drop', attr, scope)) return;
+      evt.preventDefault();
+      if (stopPropagation(scope)) evt.stopPropagation();
+    }, false);
+    elem[0].addEventListener('dragleave', function (evt) {
+      if (isDisabled() || !upload.shouldUpdateOn('drop', attr, scope)) return;
+      evt.preventDefault();
+      if (stopPropagation(scope)) evt.stopPropagation();
+      leaveTimeout = $timeout(function () {
+        if (actualDragOverClass) elem.removeClass(actualDragOverClass);
+        actualDragOverClass = null;
+        attrGetter('ngfDrag', scope, {$isDragging: false, $event: evt});
+      }, dragOverDelay || 100);
+    }, false);
+    elem[0].addEventListener('drop', function (evt) {
+      if (isDisabled() || !upload.shouldUpdateOn('drop', attr, scope)) return;
+      evt.preventDefault();
+      if (stopPropagation(scope)) evt.stopPropagation();
+      if (actualDragOverClass) elem.removeClass(actualDragOverClass);
+      actualDragOverClass = null;
+      extractFilesAndUpdateModel(evt.dataTransfer, evt, 'dropUrl');
+    }, false);
+    elem[0].addEventListener('paste', function (evt) {
+      if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1 &&
+        attrGetter('ngfEnableFirefoxPaste', scope)) {
+        evt.preventDefault();
+      }
+      if (isDisabled() || !upload.shouldUpdateOn('paste', attr, scope)) return;
+      extractFilesAndUpdateModel(evt.clipboardData || evt.originalEvent.clipboardData, evt, 'pasteUrl');
+    }, false);
+
+    if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1 &&
+      attrGetter('ngfEnableFirefoxPaste', scope)) {
+      elem.attr('contenteditable', true);
+      elem.on('keypress', function (e) {
+        if (!e.metaKey && !e.ctrlKey) {
+          e.preventDefault();
+        }
+      });
+    }
+
+    function extractFilesAndUpdateModel(source, evt, updateOnType) {
+      if (!source) return;
+      // html needs to be calculated on the same process otherwise the data will be wiped
+      // after promise resolve or setTimeout.
+      var html;
+      try {
+        html = source && source.getData && source.getData('text/html');
+      } catch (e) {/* Fix IE11 that throw error calling getData */
+      }
+      extractFiles(source.items, source.files, attrGetter('ngfAllowDir', scope) !== false,
+        attrGetter('multiple') || attrGetter('ngfMultiple', scope)).then(function (files) {
+        if (files.length) {
+          updateModel(files, evt);
+        } else {
+          extractFilesFromHtml(updateOnType, html).then(function (files) {
+            updateModel(files, evt);
+          });
+        }
+      });
+    }
+
+    function updateModel(files, evt) {
+      upload.updateModel(ngModel, attr, scope, attrGetter('ngfChange') || attrGetter('ngfDrop'), files, evt);
+    }
+
+    function extractFilesFromHtml(updateOn, html) {
+      if (!upload.shouldUpdateOn(updateOn, attr, scope) || typeof html !== 'string') return upload.rejectPromise([]);
+      var urls = [];
+      html.replace(/<(img src|img [^>]* src) *=\"([^\"]*)\"/gi, function (m, n, src) {
+        urls.push(src);
+      });
+      var promises = [], files = [];
+      if (urls.length) {
+        angular.forEach(urls, function (url) {
+          promises.push(upload.urlToBlob(url).then(function (blob) {
+            files.push(blob);
+          }));
+        });
+        var defer = $q.defer();
+        $q.all(promises).then(function () {
+          defer.resolve(files);
+        }, function (e) {
+          defer.reject(e);
+        });
+        return defer.promise;
+      }
+      return upload.emptyPromise();
+    }
+
+    function calculateDragOverClass(scope, attr, evt, callback) {
+      var obj = attrGetter('ngfDragOverClass', scope, {$event: evt}), dClass = 'dragover';
+      if (angular.isString(obj)) {
+        dClass = obj;
+      } else if (obj) {
+        if (obj.delay) dragOverDelay = obj.delay;
+        if (obj.accept || obj.reject) {
+          var items = evt.dataTransfer.items;
+          if (items == null || !items.length) {
+            dClass = obj.accept;
+          } else {
+            var pattern = obj.pattern || attrGetter('ngfPattern', scope, {$event: evt});
+            var len = items.length;
+            while (len--) {
+              if (!upload.validatePattern(items[len], pattern)) {
+                dClass = obj.reject;
+                break;
+              } else {
+                dClass = obj.accept;
+              }
+            }
+          }
+        }
+      }
+      callback(dClass);
+    }
+
+    function extractFiles(items, fileList, allowDir, multiple) {
+      var maxFiles = upload.getValidationAttr(attr, scope, 'maxFiles');
+      if (maxFiles == null) {
+        maxFiles = Number.MAX_VALUE;
+      }
+      var maxTotalSize = upload.getValidationAttr(attr, scope, 'maxTotalSize');
+      if (maxTotalSize == null) {
+        maxTotalSize = Number.MAX_VALUE;
+      }
+      var includeDir = attrGetter('ngfIncludeDir', scope);
+      var files = [], totalSize = 0;
+
+      function traverseFileTree(entry, path) {
+        var defer = $q.defer();
+        if (entry != null) {
+          if (entry.isDirectory) {
+            var promises = [upload.emptyPromise()];
+            if (includeDir) {
+              var file = {type: 'directory'};
+              file.name = file.path = (path || '') + entry.name;
+              files.push(file);
+            }
+            var dirReader = entry.createReader();
+            var entries = [];
+            var readEntries = function () {
+              dirReader.readEntries(function (results) {
+                try {
+                  if (!results.length) {
+                    angular.forEach(entries.slice(0), function (e) {
+                      if (files.length <= maxFiles && totalSize <= maxTotalSize) {
+                        promises.push(traverseFileTree(e, (path ? path : '') + entry.name + '/'));
+                      }
+                    });
+                    $q.all(promises).then(function () {
+                      defer.resolve();
+                    }, function (e) {
+                      defer.reject(e);
+                    });
+                  } else {
+                    entries = entries.concat(Array.prototype.slice.call(results || [], 0));
+                    readEntries();
+                  }
+                } catch (e) {
+                  defer.reject(e);
+                }
+              }, function (e) {
+                defer.reject(e);
+              });
+            };
+            readEntries();
+          } else {
+            entry.file(function (file) {
+              try {
+                file.path = (path ? path : '') + file.name;
+                if (includeDir) {
+                  file = upload.rename(file, file.path);
+                }
+                files.push(file);
+                totalSize += file.size;
+                defer.resolve();
+              } catch (e) {
+                defer.reject(e);
+              }
+            }, function (e) {
+              defer.reject(e);
+            });
+          }
+        }
+        return defer.promise;
+      }
+
+      var promises = [upload.emptyPromise()];
+
+      if (items && items.length > 0 && $window.location.protocol !== 'file:') {
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].webkitGetAsEntry && items[i].webkitGetAsEntry() && items[i].webkitGetAsEntry().isDirectory) {
+            var entry = items[i].webkitGetAsEntry();
+            if (entry.isDirectory && !allowDir) {
+              continue;
+            }
+            if (entry != null) {
+              promises.push(traverseFileTree(entry));
+            }
+          } else {
+            var f = items[i].getAsFile();
+            if (f != null) {
+              files.push(f);
+              totalSize += f.size;
+            }
+          }
+          if (files.length > maxFiles || totalSize > maxTotalSize ||
+            (!multiple && files.length > 0)) break;
+        }
+      } else {
+        if (fileList != null) {
+          for (var j = 0; j < fileList.length; j++) {
+            var file = fileList.item(j);
+            if (file.type || file.size > 0) {
+              files.push(file);
+              totalSize += file.size;
+            }
+            if (files.length > maxFiles || totalSize > maxTotalSize ||
+              (!multiple && files.length > 0)) break;
+          }
+        }
+      }
+
+      var defer = $q.defer();
+      $q.all(promises).then(function () {
+        if (!multiple && !includeDir && files.length) {
+          var i = 0;
+          while (files[i] && files[i].type === 'directory') i++;
+          defer.resolve([files[i]]);
+        } else {
+          defer.resolve(files);
+        }
+      }, function (e) {
+        defer.reject(e);
+      });
+
+      return defer.promise;
+    }
+  }
+
+  function dropAvailable() {
+    var div = document.createElement('div');
+    return ('draggable' in div) && ('ondrop' in div) && !/Edge\/12./i.test(navigator.userAgent);
+  }
+
+})();
+
+// customized version of https://github.com/exif-js/exif-js
+ngFileUpload.service('UploadExif', ['UploadResize', '$q', function (UploadResize, $q) {
+  var upload = UploadResize;
+
+  upload.isExifSupported = function () {
+    return window.FileReader && new FileReader().readAsArrayBuffer && upload.isResizeSupported();
+  };
+
+  function applyTransform(ctx, orientation, width, height) {
+    switch (orientation) {
+      case 2:
+        return ctx.transform(-1, 0, 0, 1, width, 0);
+      case 3:
+        return ctx.transform(-1, 0, 0, -1, width, height);
+      case 4:
+        return ctx.transform(1, 0, 0, -1, 0, height);
+      case 5:
+        return ctx.transform(0, 1, 1, 0, 0, 0);
+      case 6:
+        return ctx.transform(0, 1, -1, 0, height, 0);
+      case 7:
+        return ctx.transform(0, -1, -1, 0, height, width);
+      case 8:
+        return ctx.transform(0, -1, 1, 0, 0, width);
+    }
+  }
+
+  upload.readOrientation = function (file) {
+    var defer = $q.defer();
+    var reader = new FileReader();
+    var slicedFile = file.slice ? file.slice(0, 64 * 1024) : file;
+    reader.readAsArrayBuffer(slicedFile);
+    reader.onerror = function (e) {
+      return defer.reject(e);
+    };
+    reader.onload = function (e) {
+      var result = {orientation: 1};
+      var view = new DataView(this.result);
+      if (view.getUint16(0, false) !== 0xFFD8) return defer.resolve(result);
+
+      var length = view.byteLength,
+        offset = 2;
+      while (offset < length) {
+        var marker = view.getUint16(offset, false);
+        offset += 2;
+        if (marker === 0xFFE1) {
+          if (view.getUint32(offset += 2, false) !== 0x45786966) return defer.resolve(result);
+
+          var little = view.getUint16(offset += 6, false) === 0x4949;
+          offset += view.getUint32(offset + 4, little);
+          var tags = view.getUint16(offset, little);
+          offset += 2;
+          for (var i = 0; i < tags; i++)
+            if (view.getUint16(offset + (i * 12), little) === 0x0112) {
+              var orientation = view.getUint16(offset + (i * 12) + 8, little);
+              if (orientation >= 2 && orientation <= 8) {
+                view.setUint16(offset + (i * 12) + 8, 1, little);
+                result.fixedArrayBuffer = e.target.result;
+              }
+              result.orientation = orientation;
+              return defer.resolve(result);
+            }
+        } else if ((marker & 0xFF00) !== 0xFF00) break;
+        else offset += view.getUint16(offset, false);
+      }
+      return defer.resolve(result);
+    };
+    return defer.promise;
+  };
+
+  function arrayBufferToBase64(buffer) {
+    var binary = '';
+    var bytes = new Uint8Array(buffer);
+    var len = bytes.byteLength;
+    for (var i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+  }
+
+  upload.applyExifRotation = function (file) {
+    if (file.type.indexOf('image/jpeg') !== 0) {
+      return upload.emptyPromise(file);
+    }
+
+    var deferred = $q.defer();
+    upload.readOrientation(file).then(function (result) {
+      if (result.orientation < 2 || result.orientation > 8) {
+        return deferred.resolve(file);
+      }
+      upload.dataUrl(file, true).then(function (url) {
+        var canvas = document.createElement('canvas');
+        var img = document.createElement('img');
+
+        img.onload = function () {
+          try {
+            canvas.width = result.orientation > 4 ? img.height : img.width;
+            canvas.height = result.orientation > 4 ? img.width : img.height;
+            var ctx = canvas.getContext('2d');
+            applyTransform(ctx, result.orientation, img.width, img.height);
+            ctx.drawImage(img, 0, 0);
+            var dataUrl = canvas.toDataURL(file.type || 'image/WebP', 0.934);
+            dataUrl = upload.restoreExif(arrayBufferToBase64(result.fixedArrayBuffer), dataUrl);
+            var blob = upload.dataUrltoBlob(dataUrl, file.name);
+            deferred.resolve(blob);
+          } catch (e) {
+            return deferred.reject(e);
+          }
+        };
+        img.onerror = function () {
+          deferred.reject();
+        };
+        img.src = url;
+      }, function (e) {
+        deferred.reject(e);
+      });
+    }, function (e) {
+      deferred.reject(e);
+    });
+    return deferred.promise;
+  };
+
+  upload.restoreExif = function (orig, resized) {
+    var ExifRestorer = {};
+
+    ExifRestorer.KEY_STR = 'ABCDEFGHIJKLMNOP' +
+      'QRSTUVWXYZabcdef' +
+      'ghijklmnopqrstuv' +
+      'wxyz0123456789+/' +
+      '=';
+
+    ExifRestorer.encode64 = function (input) {
+      var output = '',
+        chr1, chr2, chr3 = '',
+        enc1, enc2, enc3, enc4 = '',
+        i = 0;
+
+      do {
+        chr1 = input[i++];
+        chr2 = input[i++];
+        chr3 = input[i++];
+
+        enc1 = chr1 >> 2;
+        enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+        enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+        enc4 = chr3 & 63;
+
+        if (isNaN(chr2)) {
+          enc3 = enc4 = 64;
+        } else if (isNaN(chr3)) {
+          enc4 = 64;
+        }
+
+        output = output +
+          this.KEY_STR.charAt(enc1) +
+          this.KEY_STR.charAt(enc2) +
+          this.KEY_STR.charAt(enc3) +
+          this.KEY_STR.charAt(enc4);
+        chr1 = chr2 = chr3 = '';
+        enc1 = enc2 = enc3 = enc4 = '';
+      } while (i < input.length);
+
+      return output;
+    };
+
+    ExifRestorer.restore = function (origFileBase64, resizedFileBase64) {
+      if (origFileBase64.match('data:image/jpeg;base64,')) {
+        origFileBase64 = origFileBase64.replace('data:image/jpeg;base64,', '');
+      }
+
+      var rawImage = this.decode64(origFileBase64);
+      var segments = this.slice2Segments(rawImage);
+
+      var image = this.exifManipulation(resizedFileBase64, segments);
+
+      return 'data:image/jpeg;base64,' + this.encode64(image);
+    };
+
+
+    ExifRestorer.exifManipulation = function (resizedFileBase64, segments) {
+      var exifArray = this.getExifArray(segments),
+        newImageArray = this.insertExif(resizedFileBase64, exifArray);
+      return new Uint8Array(newImageArray);
+    };
+
+
+    ExifRestorer.getExifArray = function (segments) {
+      var seg;
+      for (var x = 0; x < segments.length; x++) {
+        seg = segments[x];
+        if (seg[0] === 255 & seg[1] === 225) //(ff e1)
+        {
+          return seg;
+        }
+      }
+      return [];
+    };
+
+
+    ExifRestorer.insertExif = function (resizedFileBase64, exifArray) {
+      var imageData = resizedFileBase64.replace('data:image/jpeg;base64,', ''),
+        buf = this.decode64(imageData),
+        separatePoint = buf.indexOf(255, 3),
+        mae = buf.slice(0, separatePoint),
+        ato = buf.slice(separatePoint),
+        array = mae;
+
+      array = array.concat(exifArray);
+      array = array.concat(ato);
+      return array;
+    };
+
+
+    ExifRestorer.slice2Segments = function (rawImageArray) {
+      var head = 0,
+        segments = [];
+
+      while (1) {
+        if (rawImageArray[head] === 255 & rawImageArray[head + 1] === 218) {
+          break;
+        }
+        if (rawImageArray[head] === 255 & rawImageArray[head + 1] === 216) {
+          head += 2;
+        }
+        else {
+          var length = rawImageArray[head + 2] * 256 + rawImageArray[head + 3],
+            endPoint = head + length + 2,
+            seg = rawImageArray.slice(head, endPoint);
+          segments.push(seg);
+          head = endPoint;
+        }
+        if (head > rawImageArray.length) {
+          break;
+        }
+      }
+
+      return segments;
+    };
+
+
+    ExifRestorer.decode64 = function (input) {
+      var chr1, chr2, chr3 = '',
+        enc1, enc2, enc3, enc4 = '',
+        i = 0,
+        buf = [];
+
+      // remove all characters that are not A-Z, a-z, 0-9, +, /, or =
+      var base64test = /[^A-Za-z0-9\+\/\=]/g;
+      if (base64test.exec(input)) {
+        console.log('There were invalid base64 characters in the input text.\n' +
+          'Valid base64 characters are A-Z, a-z, 0-9, ' + ', ' / ',and "="\n' +
+          'Expect errors in decoding.');
+      }
+      input = input.replace(/[^A-Za-z0-9\+\/\=]/g, '');
+
+      do {
+        enc1 = this.KEY_STR.indexOf(input.charAt(i++));
+        enc2 = this.KEY_STR.indexOf(input.charAt(i++));
+        enc3 = this.KEY_STR.indexOf(input.charAt(i++));
+        enc4 = this.KEY_STR.indexOf(input.charAt(i++));
+
+        chr1 = (enc1 << 2) | (enc2 >> 4);
+        chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+        chr3 = ((enc3 & 3) << 6) | enc4;
+
+        buf.push(chr1);
+
+        if (enc3 !== 64) {
+          buf.push(chr2);
+        }
+        if (enc4 !== 64) {
+          buf.push(chr3);
+        }
+
+        chr1 = chr2 = chr3 = '';
+        enc1 = enc2 = enc3 = enc4 = '';
+
+      } while (i < input.length);
+
+      return buf;
+    };
+
+    return ExifRestorer.restore(orig, resized);  //<= EXIF
+  };
+
+  return upload;
+}]);
+
+
+},{}],42:[function(require,module,exports){
+require('./dist/ng-file-upload-all');
+module.exports = 'ngFileUpload';
+},{"./dist/ng-file-upload-all":41}],43:[function(require,module,exports){
 /* ng-infinite-scroll - v1.3.0 - 2016-06-30 */
 angular.module('infinite-scroll', []).value('THROTTLE_MILLISECONDS', null).directive('infiniteScroll', [
   '$rootScope', '$window', '$interval', 'THROTTLE_MILLISECONDS', function($rootScope, $window, $interval, THROTTLE_MILLISECONDS) {
@@ -57149,7 +60052,7 @@ if (typeof module !== "undefined" && typeof exports !== "undefined" && module.ex
   module.exports = 'infinite-scroll';
 }
 
-},{}],42:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 'use strict';
 
 module.exports = function split(str) {
@@ -57178,7 +60081,7 @@ module.exports = function split(str) {
     return res;
 };
 
-},{}],43:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 'use strict'
 
 var isObject = require('isobject')
@@ -57197,12 +60100,12 @@ function stringify (value) {
   return safeStringify(value, null, '')
 }
 
-},{"isobject":45,"json-stringify-safe":35}],44:[function(require,module,exports){
+},{"isobject":47,"json-stringify-safe":35}],46:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],45:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 /*!
  * isobject <https://github.com/jonschlinkert/isobject>
  *
@@ -57218,7 +60121,7 @@ module.exports = function isObject(o) {
   return o != null && typeof o === 'object' && !isArray(o);
 };
 
-},{"isarray":44}],46:[function(require,module,exports){
+},{"isarray":46}],48:[function(require,module,exports){
 !function(glob) {
 
   var queryToObject = function(query) {
@@ -57361,7 +60264,7 @@ module.exports = function isObject(o) {
   }
 
 }(this);
-},{}],47:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 'use strict'
 
 var printf = require('pff')
@@ -57373,7 +60276,7 @@ module.exports = function format (message) {
   return toArray(arguments).join(' ')
 }
 
-},{"pff":42,"to-array":49}],48:[function(require,module,exports){
+},{"pff":44,"to-array":51}],50:[function(require,module,exports){
 'use strict'
 
 var assign = require('xtend/mutable')
@@ -57433,7 +60336,7 @@ function toErrback (method, receiver) {
   }
 }
 
-},{"dot-prop":31,"xtend/mutable":52}],49:[function(require,module,exports){
+},{"dot-prop":31,"xtend/mutable":54}],51:[function(require,module,exports){
 module.exports = toArray
 
 function toArray(list, index) {
@@ -57448,7 +60351,7 @@ function toArray(list, index) {
     return array
 }
 
-},{}],50:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 // Returns a wrapper function that returns a wrapped callback
 // The wrapper function should do some stuff, and return a
 // presumably different callback function.
@@ -57483,7 +60386,7 @@ function wrappy (fn, cb) {
   }
 }
 
-},{}],51:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 module.exports = extend
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -57504,7 +60407,7 @@ function extend() {
     return target
 }
 
-},{}],52:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 module.exports = extend
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -57523,7 +60426,7 @@ function extend(target) {
     return target
 }
 
-},{}],53:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 'use strict';
 
 AdminpanelConfig.$inject = ["$stateProvider"];
@@ -57556,7 +60459,7 @@ function AdminpanelConfig($stateProvider) {
 
 exports.default = AdminpanelConfig;
 
-},{}],54:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -57717,7 +60620,7 @@ ModalInstanceAPCtrl.$inject = ["Toastr", "$uibModalInstance", "$rootScope", "use
 
 exports.default = { AdminpanelCtrl: AdminpanelCtrl, ModalInstanceAPCtrl: ModalInstanceAPCtrl };
 
-},{}],55:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -57747,7 +60650,7 @@ adminpanelModule.controller('ModalInstanceAPCtrl', _adminpanel4.default.ModalIns
 
 exports.default = adminpanelModule;
 
-},{"./adminpanel.config":53,"./adminpanel.controller":54,"angular":17}],56:[function(require,module,exports){
+},{"./adminpanel.config":55,"./adminpanel.controller":56,"angular":17}],58:[function(require,module,exports){
 'use strict';
 
 var _angular = require('angular');
@@ -57780,6 +60683,8 @@ require('angular-messages');
 
 require('angular-stripe');
 
+require('ng-file-upload');
+
 require('./config/app.templates');
 
 require('./layout');
@@ -57811,15 +60716,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Create and bootstrap application
 
 // Import our app functionaity
-
-
-// Import our app config files
-var requires = ['ui.router', 'ui.bootstrap', 'templates', 'app.layout', 'app.components', 'app.home', 'app.profile', 'app.article', 'app.services', 'app.auth', 'app.settings', 'app.editor', 'app.contact', 'app.projects', 'app.adminpanel', 'ngMessages', 'angular-stripe', _angularToastr2.default];
+var requires = ['ui.router', 'ui.bootstrap', 'ngFileUpload', 'templates', 'app.layout', 'app.components', 'app.home', 'app.profile', 'app.article', 'app.services', 'app.auth', 'app.settings', 'app.editor', 'app.contact', 'app.projects', 'app.adminpanel', 'ngMessages', 'angular-stripe', _angularToastr2.default];
 
 // Mount on window for testing
 
 
 // Import our templates file (generated by Gulp)
+
+
+// Import our app config files
 window.app = _angular2.default.module('app', requires);
 
 _angular2.default.module('app').constant('AppConstants', _app2.default);
@@ -57832,7 +60737,7 @@ _angular2.default.bootstrap(document, ['app'], {
   strictDi: true
 });
 
-},{"./adminpanel":55,"./article":61,"./auth":64,"./components":72,"./config/app.config":75,"./config/app.constants":76,"./config/app.run":77,"./config/app.templates":78,"./contact":82,"./editor":85,"./home":88,"./layout":91,"./profile":92,"./projects":98,"./services":107,"./settings":114,"angular":17,"angular-animate":2,"angular-messages":5,"angular-stripe":8,"angular-toastr":12,"angular-ui-bootstrap":14,"angular-ui-router":15}],57:[function(require,module,exports){
+},{"./adminpanel":57,"./article":63,"./auth":66,"./components":74,"./config/app.config":77,"./config/app.constants":78,"./config/app.run":79,"./config/app.templates":80,"./contact":84,"./editor":87,"./home":90,"./layout":93,"./profile":94,"./projects":100,"./services":109,"./settings":116,"angular":17,"angular-animate":2,"angular-messages":5,"angular-stripe":8,"angular-toastr":12,"angular-ui-bootstrap":14,"angular-ui-router":15,"ng-file-upload":42}],59:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -57887,7 +60792,7 @@ var ArticleActions = {
 
 exports.default = ArticleActions;
 
-},{}],58:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 'use strict';
 
 ArticleConfig.$inject = ["$stateProvider"];
@@ -57917,7 +60822,7 @@ function ArticleConfig($stateProvider) {
 
 exports.default = ArticleConfig;
 
-},{}],59:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -57999,7 +60904,7 @@ var ArticleCtrl = function () {
 
 exports.default = ArticleCtrl;
 
-},{"marked":40}],60:[function(require,module,exports){
+},{"marked":40}],62:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58032,7 +60937,7 @@ var Comment = {
 
 exports.default = Comment;
 
-},{}],61:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58078,7 +60983,7 @@ articleModule.component('comment', _comment2.default);
 
 exports.default = articleModule;
 
-},{"./article-actions.component":57,"./article.config":58,"./article.controller":59,"./comment.component":60,"angular":17}],62:[function(require,module,exports){
+},{"./article-actions.component":59,"./article.config":60,"./article.controller":61,"./comment.component":62,"angular":17}],64:[function(require,module,exports){
 'use strict';
 
 AuthConfig.$inject = ["$stateProvider", "$httpProvider"];
@@ -58122,7 +61027,7 @@ function AuthConfig($stateProvider, $httpProvider) {
 
 exports.default = AuthConfig;
 
-},{}],63:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58176,7 +61081,7 @@ AuthCtrl.$inject = ["$state", "Toastr", "User"];
 
 exports.default = AuthCtrl;
 
-},{}],64:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58216,7 +61121,7 @@ authModule.controller('SocialCtrl', _social2.default);
 
 exports.default = authModule;
 
-},{"./auth.config":62,"./auth.controller":63,"./social.controller":65,"angular":17}],65:[function(require,module,exports){
+},{"./auth.config":64,"./auth.controller":65,"./social.controller":67,"angular":17}],67:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58253,7 +61158,7 @@ SocialCtrl.$inject = ["User", "$state", "$scope", "Toastr"];
 
 exports.default = SocialCtrl;
 
-},{}],66:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58356,7 +61261,7 @@ var ArticleList = {
 
 exports.default = ArticleList;
 
-},{}],67:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58372,7 +61277,7 @@ var ArticleMeta = {
 
 exports.default = ArticleMeta;
 
-},{}],68:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58387,7 +61292,7 @@ var ArticlePreview = {
 
 exports.default = ArticlePreview;
 
-},{}],69:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58440,7 +61345,7 @@ var ListPagination = {
 
 exports.default = ListPagination;
 
-},{}],70:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58505,7 +61410,7 @@ var FavoriteBtn = {
 
 exports.default = FavoriteBtn;
 
-},{}],71:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58571,7 +61476,7 @@ var FollowBtn = {
 
 exports.default = FollowBtn;
 
-},{}],72:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58636,7 +61541,7 @@ componentsModule.component('listPagination', _listPagination2.default);
 
 exports.default = componentsModule;
 
-},{"./article-helpers/article-list.component":66,"./article-helpers/article-meta.component":67,"./article-helpers/article-preview.component":68,"./article-helpers/list-pagination.component":69,"./buttons/favorite-btn.component":70,"./buttons/follow-btn.component":71,"./list-errors.component":73,"./show-authed.directive":74,"angular":17}],73:[function(require,module,exports){
+},{"./article-helpers/article-list.component":68,"./article-helpers/article-meta.component":69,"./article-helpers/article-preview.component":70,"./article-helpers/list-pagination.component":71,"./buttons/favorite-btn.component":72,"./buttons/follow-btn.component":73,"./list-errors.component":75,"./show-authed.directive":76,"angular":17}],75:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58651,7 +61556,7 @@ var ListErrors = {
 
 exports.default = ListErrors;
 
-},{}],74:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 'use strict';
 
 ShowAuthed.$inject = ["User"];
@@ -58690,7 +61595,7 @@ function ShowAuthed(User) {
 
 exports.default = ShowAuthed;
 
-},{}],75:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 'use strict';
 
 AppConfig.$inject = ["$httpProvider", "$stateProvider", "$locationProvider", "$urlRouterProvider"];
@@ -58730,7 +61635,7 @@ function AppConfig($httpProvider, $stateProvider, $locationProvider, $urlRouterP
 
 exports.default = AppConfig;
 
-},{"./auth.interceptor":79}],76:[function(require,module,exports){
+},{"./auth.interceptor":81}],78:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58745,7 +61650,7 @@ var AppConstants = {
 
 exports.default = AppConstants;
 
-},{}],77:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 'use strict';
 
 AppRun.$inject = ["AppConstants", "$rootScope"];
@@ -58774,26 +61679,26 @@ function AppRun(AppConstants, $rootScope) {
 
 exports.default = AppRun;
 
-},{}],78:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 "use strict";
 
 angular.module("templates", []).run(["$templateCache", function ($templateCache) {
   $templateCache.put("adminpanel/adminpanel.html", "<nav class=\"navbar navbar-default navbar-static-top\">\n	<div class=\"container-fluid\"></div>\n</nav>\n<div class=\"container\">\n    <div class=\"row\">\n        <div class=\"col-md-4\">\n            <div class=\"panel panel-default\">\n                <ul class=\"nav nav-pills nav-stacked\">\n                    <li><a ng-click=\"$ctrl.seeProjects()\" style=\"cursor: pointer;\">Projects</a></li>\n                    <li><a ng-click=\"$ctrl.seeUsers()\" style=\"cursor: pointer;\">Users</a></li>\n                </ul>\n            </div>\n        </div>\n        <div class=\"col-md-8\" ng-show=\"$ctrl.showProjects\">\n            <div class=\"panel panel-default\">\n                <div class=\"panel-body\">\n                    <div class=\"table table-data clear-both\">\n                        <table id=\"user_table\" class=\"users list dtable\">\n                            <thead>\n                                <tr>\n                                    <th>ID</th>\n                                    <th>Project Name</th>\n                                    <th>Company Name</th>\n                                    <th>Money Goal</th>\n                                    <th>Sector</th>\n                                    <th class=\"blank-cell\"></th>\n                                    <th class=\"blank-cell\"></th>\n                                    <th class=\"blank-cell\"></th>\n                                </tr>\n                            </thead>\n                            <tbody>\n                                <tr data-ng-repeat=\"project in $ctrl.infoProject | limitTo:$ctrl.itemsPerPage\">\n                                    <td>{{ project._id }}</td>\n                                    <td>{{ project.name }}</td>\n                                    <td>{{ project.company }}</td>\n                                    <td>{{ project.goal }}</td>\n                                    <td>{{ project.sector }}</td>\n                                    <td class=\"users controls blank-cell\">\n                                        <a class=\"btn pointer\" id=\"{{project.slug}}\" data-ng-click=\"showListProject()\"><i class=\"ion-ios-eye\"></i></a>\n                                    </td>\n                                    <td class=\"users controls blank-cell\">\n                                        <a class=\"btn pointer\" data-ng-click=\"showEditProject()\"><i class=\"ion-android-color-palette\"></i></a>\n                                    </td>\n                                    <td class=\"users controls blank-cell\">\n                                        <a class=\"btn pointer\" data-ng-click=\"showDeleteProject()\"><i class=\"ion-ios-trash\"></i></a>\n                                    </td>\n                                </tr>\n                            </tbody>\n                        </table>\n                    </div>\n                </div>\n            </div>\n            <ul uib-pagination class=\"pagination-sm\" boundary-link-numbers=\"true\"\n            total-items=\"$ctrl.infoPager.length\" ng-model=\"$ctrl.currentPage\"\n            items-per-page=\"$ctrl.itemsPerPage\" ng-change=\"$ctrl.changePage()\">\n            </ul>\n        </div>\n\n        <div class=\"col-md-8\" ng-show=\"$ctrl.showUseres\">\n            <div class=\"panel panel-default\">\n                <div class=\"panel-body\">\n                    <div class=\"table table-data clear-both\">\n                        <table id=\"user_table\" class=\"users list dtable\">\n                            <thead>\n                                <tr>\n                                    <th>ID</th>\n                                    <th>Email</th>\n                                    <th>Username</th>\n                                    <th>Type</th>\n                                    <th class=\"blank-cell\"></th>\n                                    <th class=\"blank-cell\"></th>\n                                    <th class=\"blank-cell\"></th>\n                                </tr>\n                            </thead>\n                            <tbody>\n                                <tr data-ng-repeat=\"user in $ctrl.infoUsers | limitTo:$ctrl.itemsPerPage\">\n                                    <td>{{ user._id }}</td>\n                                    <td>{{ user.email }}</td>\n                                    <td>{{ user.username }}</td>\n                                    <td>{{ user.type }}</td>\n                                    <td class=\"users controls blank-cell\">\n                                        <a class=\"btn pointer\" id=\"{{user._id}}\" ng-click=\"open(\'list\')\"><i class=\"ion-ios-eye\"></i></a>\n                                    </td>\n                                    <td class=\"users controls blank-cell\">\n                                        <a class=\"btn pointer\" id=\"{{user._id}}\" ng-click=\"open(\'update\')\"><i class=\"ion-android-color-palette\"></i></a>\n                                    </td>\n                                    <td class=\"users controls blank-cell\">\n                                        <a class=\"btn pointer\" id=\"{{ user._id }}\" data-ng-click=\"deleteUser()\"><i class=\"ion-ios-trash\"></i></a>\n                                    </td>\n                                </tr>\n                            </tbody>\n                        </table>\n                    </div>\n                </div>\n            </div>\n            <ul uib-pagination class=\"pagination-sm\" boundary-link-numbers=\"true\"\n            total-items=\"$ctrl.infoPagerUser.length\" ng-model=\"$ctrl.currentPageUser\"\n            items-per-page=\"$ctrl.itemsPerPageUser\" ng-change=\"$ctrl.changePageUser()\">\n            </ul>\n        </div>\n    </div>\n  </div>");
   $templateCache.put("adminpanel/listUserModal.html", "<div class=\"modal-header\">\n    <h3 class=\"modal-title\" id=\"modal-title\">{{$ctrl.user.username}}</h3>\n</div>\n<!--LIST-->\n<div class=\"modal-body\" id=\"modal-body\" ng-show=\"$ctrl.modalList\">\n    <div class=\"container\">\n        <div class=\"row\">\n            <div class=\"col-md-6\">\n                <div class=\"box box-info\">\n                    <div class=\"box-body\">\n                        <div class=\"col-sm-6\">\n                            <div  align=\"center\"> \n                                <img alt=\"User Pic\" src=\"{{$ctrl.user.image}}\" id=\"profile-image1\" class=\"img-circle img-responsive\">\n                            </div>\n                            <br>\n                        </div>\n                        <div class=\"col-sm-6\">\n                            <span><h4 style=\"color:#00b1b1;\">{{$ctrl.user._id}}</h4></span>\n                            <span><p>{{$ctrl.user.type}}</p></span>            \n                        </div>\n                        <div class=\"clearfix\"></div>\n                        <hr style=\"margin:5px 0 5px 0;\">\n\n                        <div class=\"col-sm-5 col-xs-6 tital \" >Username:</div><div class=\"col-sm-7 col-xs-6 \">{{$ctrl.user.username}}</div>\n                        <div class=\"clearfix\"></div>\n                        <br>\n                        \n                        <div class=\"col-sm-5 col-xs-6 tital \" >Created At:</div><div class=\"col-sm-7\">{{$ctrl.user.createdAt}}</div>\n                        <div class=\"clearfix\"></div>\n                        <br>\n                        \n                        <div class=\"col-sm-5 col-xs-6 tital \" >Email:</div><div class=\"col-sm-7\">{{$ctrl.user.email}}</div>\n                        <div class=\"clearfix\"></div>\n                        <br>\n                    </div>        \n                </div>    \n            </div>  \n        </div>\n    </div>\n</div>\n\n<!--UPDATE-->\n<div class=\"modal-body\" id=\"modal-body\" ng-show=\"$ctrl.modalUpdate\">\n    <form class=\"form-horizontal\" id=\"formAdmin\" name=\"formAdmin\">\n        <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Username</label><br />\n            <div class=\"col-md-9\">\n                <input required ng-model=\"$ctrl.user.username\" id=\"username\" name=\"username\" type=\"text\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"20\" ng-model-options=\"{  debounce: 500 }\">\n                <div ng-messages=\"formAdmin.username.$error\" style=\"color: red; font-weight: bold;\">\n                    <p ng-message=\"required\" ng-show=\"formAdmin.username.$dirty\">Username can\'t be null.</p>\n                    <p ng-message=\"minlength\">Enter more than 3 characters.</p>\n                    <p ng-message=\"maxlength\">Enter less than 20 characters.</p>\n                </div>\n            </div>\n        </div>\n\n        <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Email</label><br />\n            <div class=\"col-md-9\">\n                <input required ng-model=\"$ctrl.user.email\" id=\"email\" name=\"email\" type=\"email\"  class=\"form-control\" ng-model-options=\"{  debounce: 500 }\">\n                <div ng-messages=\"formAdmin.email.$error\" style=\"color: red; font-weight: bold;\">\n                    <p ng-message=\"required\" ng-show=\"formAdmin.email.$dirty\">Email can\'t be null.</p>\n                    <p ng-message=\"email\">Please enter a valid email address.</p>\n                </div>\n            </div>\n        </div>\n\n        <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"subject\" style=\"max-width: 35%;\">Type</label>\n            <div class=\"col-md-9\">\n                <select class=\"form-control\" style=\"height: 35%;\" ng-options=\"selectType as selectType for selectType in $ctrl.selectType track by selectType\" ng-model=\"$ctrl.user.type\" name=\"selectType\">\n                </select>\n            </div>\n        </div>\n    </form>\n    \n</div>\n\n<div class=\"modal-footer\">\n        <input class=\"btn btn-primary\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Save\"\n                ng-show=\"formAdmin.username.$valid && formAdmin.email.$valid\"\n                ng-click=\"$ctrl.saveUser()\"/>\n        <input class=\"btn btn-primary\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Save\"\n                ng-hide=\"formAdmin.username.$valid && formAdmin.email.$valid\"\n                ng-click=\"$ctrl.nvalidUser()\"/>\n    <button class=\"btn btn-warning\" type=\"button\" ng-click=\"$ctrl.cancel()\">Cancel</button>\n</div>\n");
-  $templateCache.put("auth/auth.html", "<div class=\"auth-page\">\n  <div class=\"container page\">\n    <div class=\"row\">\n		<div class=\"col-md-6 offset-md-3 col-xs-12\">\n			<h1 class=\"text-xs-center\" ng-bind=\"::$ctrl.title\"></h1>\n			<p class=\"text-xs-center\">\n				<a ui-sref=\"app.login\"\n					ng-show=\"$ctrl.authType === \'register\'\">\n					Have an account?\n				</a>\n				<a ui-sref=\"app.register\"\n					ng-show=\"$ctrl.authType === \'login\'\">\n					Need an account?\n				</a>\n			</p>\n			<a href=\"http://localhost:3000/api/auth/googleplus\" style=\"font-size: 25px;\"><i class=\"fa fa-google\"></i><i class=\"ion-social-google-outline\"></i>&nbsp;Google</a><br />\n			<a href=\"http://localhost:3000/api/auth/github\" style=\"font-size: 25px; color:black\"><i class=\"ion-social-github\"></i>&nbsp;Github</a>\n			<form name=\"authForm\">\n				<fieldset ng-disabled=\"$ctrl.disabledForm\">\n\n					<fieldset class=\"form-group\" ng-show=\"$ctrl.authType === \'register\'\">\n						<input required class=\"form-control form-control-lg\" required type=\"text\" placeholder=\"Username\" ng-model=\"$ctrl.authForm.username\" name=\"Username\" ng-minlength=\"3\" ng-maxlength=\"20\"/>\n						<!--<span class=\"text-danger\" ng-show=\"authForm.Username.$error.required && (authForm.Username.$dirty || authForm.Username.$touched)\">Enter a name</span>\n						<span class=\"text-danger\" ng-show=\"authForm.Username.$error.minlength\">Enter more than 3 characters</span>\n						<span class=\"text-danger\" ng-show=\"authForm.Username.$error.maxlength\">Enter less than 20 characters</span>-->\n						<div ng-messages=\"authForm.Username.$error\" style=\"color: red; font-weight: bold;\">\n							<p ng-message=\"required\" ng-show=\"authForm.Username.$dirty\">Username is required.</p>\n							<p ng-message=\"minlength\">Enter more than 3 characters.</p>\n							<p ng-message=\"maxlength\">Enter less than 20 characters.</p>\n						</div>\n					</fieldset>\n	\n					<fieldset class=\"form-group\">\n						<input required class=\"form-control form-control-lg\" type=\"email\" placeholder=\"Email\" ng-model=\"$ctrl.authForm.email\" name=\"Email\"/>\n						<!--<span class=\"text-danger\" ng-show=\"authForm.Email.$error.required && (authForm.Email.$dirty || authForm.Email.$touched)\">Enter a email</span>\n						<span class=\"text-danger\" ng-show=\"authForm.Email.$error.email\">Invalid email</span>-->\n						<div ng-messages=\"authForm.Email.$error\" style=\"color: red; font-weight: bold;\">\n							<p ng-message=\"required\" ng-show=\"authForm.Email.$dirty\">Email is required.</p>\n							<p ng-message=\"email\">Please enter a valid email address.</p>\n						</div>\n					</fieldset>\n	\n					<fieldset class=\"form-group\">\n						<input required class=\"form-control form-control-lg\" type=\"password\" placeholder=\"Password\" ng-model=\"$ctrl.authForm.password\" name=\"Password\" ng-minlength=\"6\" ng-maxlength=\"40\"/>\n						<!--<span class=\"text-danger\" ng-show=\"authForm.Password.$error.required && (authForm.Password.$dirty || authForm.Password.$touched)\">Enter a password</span>\n						<span class=\"text-danger\" ng-show=\"authForm.Password.$error.minlength\">Enter more than 6 characters</span>\n						<span class=\"text-danger\" ng-show=\"authForm.Password.$error.maxlength\">Enter less than 40 characters</span>-->\n						<div ng-messages=\"authForm.Password.$error\" style=\"color: red; font-weight: bold;\">\n							<p ng-message=\"required\" ng-show=\"authForm.Password.$dirty\">Password is required.</p>\n							<p ng-message=\"minlength\">Enter more than 6 characters.</p>\n							<p ng-message=\"maxlength\">Enter less than 40 characters.</p>\n						</div>\n\n					</fieldset>\n	\n					<fieldset class=\"form-group\" ng-show=\"$ctrl.authType === \'register\'\">\n						<input required class=\"form-control form-control-lg\" type=\"password\" placeholder=\"Password\" ng-model=\"$ctrl.authForm.rpassword\" name=\"rPassword\"/>\n						<span style=\"color: red; font-weight: bold;\" ng-show=\"authForm.rPassword.$error.required && (authForm.rPassword.$dirty || authForm.rPassword.$touched)\">Enter a password</span>\n						<span style=\"color: red; font-weight: bold;\" ng-show=\"$ctrl.authForm.rpassword != $ctrl.authForm.password && (authForm.rPassword.$dirty || authForm.rPassword.$touched)\">The password not are the same</span>\n					</fieldset>\n\n					<fieldset ng-show=\"$ctrl.authType === \'register\'\">\n						<button class=\"btn btn-lg btn-primary pull-xs-right\" type=\"submit\" ng-bind=\"::$ctrl.title\"\n							ng-show=\"authForm.Username.$valid && authForm.Email.$valid && authForm.Password.$valid && authForm.rPassword.$valid && $ctrl.authForm.rpassword === $ctrl.authForm.password\"\n							ng-click=\"$ctrl.authSubmit()\"></button>\n						<button class=\"btn btn-lg btn-primary pull-xs-right\" type=\"submit\" ng-bind=\"::$ctrl.title\"\n							ng-hide=\"authForm.Username.$valid && authForm.Email.$valid && authForm.Password.$valid && authForm.rPassword.$valid && $ctrl.authForm.rpassword === $ctrl.authForm.password\"\n							ng-click=\"$ctrl.nvalidSubmit()\"></button>\n					</fieldset>\n\n					<fieldset ng-show=\"$ctrl.authType === \'login\'\">\n						<button class=\"btn btn-lg btn-primary pull-xs-right\" type=\"submit\" ng-bind=\"::$ctrl.title\"\n							ng-show=\"authForm.Email.$valid && authForm.Password.$valid\"\n							ng-click=\"$ctrl.authSubmit()\"></button>\n						<button class=\"btn btn-lg btn-primary pull-xs-right\" type=\"submit\" ng-bind=\"::$ctrl.title\"\n							ng-hide=\"authForm.Email.$valid && authForm.Password.$valid\"\n							ng-click=\"$ctrl.nvalidSubmit()\"></button>\n					</fieldset>\n\n				</fieldset>\n			</form>\n		</div>\n    </div>\n  </div>\n</div>\n");
   $templateCache.put("article/article-actions.html", "<article-meta article=\"$ctrl.article\">\n\n  <span ng-show=\"$ctrl.canModify\">\n    <a class=\"btn btn-sm btn-outline-secondary\"\n      ui-sref=\"app.editor({ slug: $ctrl.article.slug })\">\n      <i class=\"ion-edit\"></i> Edit Article\n    </a>\n\n    <button class=\"btn btn-sm btn-outline-danger\"\n      ng-class=\"{disabled: $ctrl.isDeleting}\"\n      ng-click=\"$ctrl.deleteArticle()\">\n      <i class=\"ion-trash-a\"></i> Delete Article\n    </button>\n  </span>\n\n  <span ng-hide=\"$ctrl.canModify\">\n    <follow-btn user=\"$ctrl.article.author\"></follow-btn>\n    <favorite-btn article=\"$ctrl.article\">\n      {{ $ctrl.article.favorited ? \'Unfavorite\' : \'Favorite\' }} Article <span class=\"counter\">({{$ctrl.article.favoritesCount}})</span>\n    </favorite-btn>\n  </span>\n\n</article-meta>\n");
   $templateCache.put("article/article.html", "<div class=\"article-page\">\n\n  <!-- Banner for article title, action buttons -->\n  <div class=\"banner\">\n    <div class=\"container\">\n\n      <h1 ng-bind=\"::$ctrl.article.title\"></h1>\n\n      <div class=\"article-meta\">\n        <!-- Show author info + favorite & follow buttons -->\n        <article-actions article=\"$ctrl.article\"></article-actions>\n\n      </div>\n\n    </div>\n  </div>\n\n\n\n  <!-- Main view. Contains article html and comments -->\n  <div class=\"container page\">\n\n    <!-- Article\'s HTML & tags rendered here -->\n    <div class=\"row article-content\">\n      <div class=\"col-xs-12\">\n\n        <div ng-bind-html=\"::$ctrl.article.body\"></div>\n\n        <ul class=\"tag-list\">\n          <li class=\"tag-default tag-pill tag-outline\"\n            ng-repeat=\"tag in ::$ctrl.article.tagList\">\n            {{ tag }}\n          </li>\n        </ul>\n\n      </div>\n    </div>\n\n    <hr />\n\n    <div class=\"article-actions\">\n\n      <!-- Show author info + favorite & follow buttons -->\n      <article-actions article=\"$ctrl.article\"></article-actions>\n\n    </div>\n\n    <!-- Comments section -->\n    <div class=\"row\">\n      <div class=\"col-xs-12 col-md-8 offset-md-2\">\n\n        <div show-authed=\"true\">\n          <list-errors from=\"$crl.commentForm.errors\"></list-errors>\n          <form class=\"card comment-form\" ng-submit=\"$ctrl.addComment()\">\n            <fieldset ng-disabled=\"$ctrl.commentForm.isSubmitting\">\n              <div class=\"card-block\">\n                <textarea class=\"form-control\"\n                  placeholder=\"Write a comment...\"\n                  rows=\"3\"\n                  ng-model=\"$ctrl.commentForm.body\"></textarea>\n              </div>\n              <div class=\"card-footer\">\n                <img ng-src=\"{{::$ctrl.currentUser.image}}\" class=\"comment-author-img\" />\n                <button class=\"btn btn-sm btn-primary\" type=\"submit\">\n                 Post Comment\n                </button>\n              </div>\n            </fieldset>\n          </form>\n        </div>\n\n        <div show-authed=\"false\">\n          <a ui-sref=\"app.login\">Sign in</a> or <a ui-sref=\"app.register\">sign up</a> to add comments on this article.\n        </div>\n\n        <comment ng-repeat=\"cmt in $ctrl.comments\"\n          data=\"cmt\"\n          delete-cb=\"$ctrl.deleteComment(cmt.id, $index)\">\n        </comment>\n\n\n      </div>\n    </div>\n\n  </div>\n\n\n\n</div>\n");
   $templateCache.put("article/comment.html", "<div class=\"card\">\n  <div class=\"card-block\">\n    <p class=\"card-text\" ng-bind=\"::$ctrl.data.body\"></p>\n  </div>\n  <div class=\"card-footer\">\n    <a class=\"comment-author\" ui-sref=\"app.profile.main({ username: $ctrl.data.author.username })\">\n      <img ng-src=\"{{::$ctrl.data.author.image}}\" class=\"comment-author-img\" />\n    </a>\n    &nbsp;\n    <a class=\"comment-author\" ui-sref=\"app.profile.main({ username: $ctrl.data.author.username })\" ng-bind=\"::$ctrl.data.author.username\">\n    </a>\n    <span class=\"date-posted\"\n      ng-bind=\"::$ctrl.data.createdAt | date: \'longDate\'\">\n    </span>\n    <span class=\"mod-options\" ng-show=\"$ctrl.canModify\">\n      <i class=\"ion-trash-a\" ng-click=\"$ctrl.deleteCb()\"></i>\n    </span>\n  </div>\n</div>\n");
+  $templateCache.put("auth/auth.html", "<div class=\"auth-page\">\n  <div class=\"container page\">\n    <div class=\"row\">\n		<div class=\"col-md-6 offset-md-3 col-xs-12\">\n			<h1 class=\"text-xs-center\" ng-bind=\"::$ctrl.title\"></h1>\n			<p class=\"text-xs-center\">\n				<a ui-sref=\"app.login\"\n					ng-show=\"$ctrl.authType === \'register\'\">\n					Have an account?\n				</a>\n				<a ui-sref=\"app.register\"\n					ng-show=\"$ctrl.authType === \'login\'\">\n					Need an account?\n				</a>\n			</p>\n			<a href=\"http://localhost:3000/api/auth/googleplus\" style=\"font-size: 25px;\"><i class=\"fa fa-google\"></i><i class=\"ion-social-google-outline\"></i>&nbsp;Google</a><br />\n			<a href=\"http://localhost:3000/api/auth/github\" style=\"font-size: 25px; color:black\"><i class=\"ion-social-github\"></i>&nbsp;Github</a>\n			<form name=\"authForm\">\n				<fieldset ng-disabled=\"$ctrl.disabledForm\">\n\n					<fieldset class=\"form-group\" ng-show=\"$ctrl.authType === \'register\'\">\n						<input required class=\"form-control form-control-lg\" required type=\"text\" placeholder=\"Username\" ng-model=\"$ctrl.authForm.username\" name=\"Username\" ng-minlength=\"3\" ng-maxlength=\"20\"/>\n						<!--<span class=\"text-danger\" ng-show=\"authForm.Username.$error.required && (authForm.Username.$dirty || authForm.Username.$touched)\">Enter a name</span>\n						<span class=\"text-danger\" ng-show=\"authForm.Username.$error.minlength\">Enter more than 3 characters</span>\n						<span class=\"text-danger\" ng-show=\"authForm.Username.$error.maxlength\">Enter less than 20 characters</span>-->\n						<div ng-messages=\"authForm.Username.$error\" style=\"color: red; font-weight: bold;\">\n							<p ng-message=\"required\" ng-show=\"authForm.Username.$dirty\">Username is required.</p>\n							<p ng-message=\"minlength\">Enter more than 3 characters.</p>\n							<p ng-message=\"maxlength\">Enter less than 20 characters.</p>\n						</div>\n					</fieldset>\n	\n					<fieldset class=\"form-group\">\n						<input required class=\"form-control form-control-lg\" type=\"email\" placeholder=\"Email\" ng-model=\"$ctrl.authForm.email\" name=\"Email\"/>\n						<!--<span class=\"text-danger\" ng-show=\"authForm.Email.$error.required && (authForm.Email.$dirty || authForm.Email.$touched)\">Enter a email</span>\n						<span class=\"text-danger\" ng-show=\"authForm.Email.$error.email\">Invalid email</span>-->\n						<div ng-messages=\"authForm.Email.$error\" style=\"color: red; font-weight: bold;\">\n							<p ng-message=\"required\" ng-show=\"authForm.Email.$dirty\">Email is required.</p>\n							<p ng-message=\"email\">Please enter a valid email address.</p>\n						</div>\n					</fieldset>\n	\n					<fieldset class=\"form-group\">\n						<input required class=\"form-control form-control-lg\" type=\"password\" placeholder=\"Password\" ng-model=\"$ctrl.authForm.password\" name=\"Password\" ng-minlength=\"6\" ng-maxlength=\"40\"/>\n						<!--<span class=\"text-danger\" ng-show=\"authForm.Password.$error.required && (authForm.Password.$dirty || authForm.Password.$touched)\">Enter a password</span>\n						<span class=\"text-danger\" ng-show=\"authForm.Password.$error.minlength\">Enter more than 6 characters</span>\n						<span class=\"text-danger\" ng-show=\"authForm.Password.$error.maxlength\">Enter less than 40 characters</span>-->\n						<div ng-messages=\"authForm.Password.$error\" style=\"color: red; font-weight: bold;\">\n							<p ng-message=\"required\" ng-show=\"authForm.Password.$dirty\">Password is required.</p>\n							<p ng-message=\"minlength\">Enter more than 6 characters.</p>\n							<p ng-message=\"maxlength\">Enter less than 40 characters.</p>\n						</div>\n\n					</fieldset>\n	\n					<fieldset class=\"form-group\" ng-show=\"$ctrl.authType === \'register\'\">\n						<input required class=\"form-control form-control-lg\" type=\"password\" placeholder=\"Password\" ng-model=\"$ctrl.authForm.rpassword\" name=\"rPassword\"/>\n						<span style=\"color: red; font-weight: bold;\" ng-show=\"authForm.rPassword.$error.required && (authForm.rPassword.$dirty || authForm.rPassword.$touched)\">Enter a password</span>\n						<span style=\"color: red; font-weight: bold;\" ng-show=\"$ctrl.authForm.rpassword != $ctrl.authForm.password && (authForm.rPassword.$dirty || authForm.rPassword.$touched)\">The password not are the same</span>\n					</fieldset>\n\n					<fieldset ng-show=\"$ctrl.authType === \'register\'\">\n						<button class=\"btn btn-lg btn-primary pull-xs-right\" type=\"submit\" ng-bind=\"::$ctrl.title\"\n							ng-show=\"authForm.Username.$valid && authForm.Email.$valid && authForm.Password.$valid && authForm.rPassword.$valid && $ctrl.authForm.rpassword === $ctrl.authForm.password\"\n							ng-click=\"$ctrl.authSubmit()\"></button>\n						<button class=\"btn btn-lg btn-primary pull-xs-right\" type=\"submit\" ng-bind=\"::$ctrl.title\"\n							ng-hide=\"authForm.Username.$valid && authForm.Email.$valid && authForm.Password.$valid && authForm.rPassword.$valid && $ctrl.authForm.rpassword === $ctrl.authForm.password\"\n							ng-click=\"$ctrl.nvalidSubmit()\"></button>\n					</fieldset>\n\n					<fieldset ng-show=\"$ctrl.authType === \'login\'\">\n						<button class=\"btn btn-lg btn-primary pull-xs-right\" type=\"submit\" ng-bind=\"::$ctrl.title\"\n							ng-show=\"authForm.Email.$valid && authForm.Password.$valid\"\n							ng-click=\"$ctrl.authSubmit()\"></button>\n						<button class=\"btn btn-lg btn-primary pull-xs-right\" type=\"submit\" ng-bind=\"::$ctrl.title\"\n							ng-hide=\"authForm.Email.$valid && authForm.Password.$valid\"\n							ng-click=\"$ctrl.nvalidSubmit()\"></button>\n					</fieldset>\n\n				</fieldset>\n			</form>\n		</div>\n    </div>\n  </div>\n</div>\n");
   $templateCache.put("components/list-errors.html", "<ul class=\"error-messages\" ng-show=\"$ctrl.errors\">\n  <div ng-repeat=\"(field, errors) in $ctrl.errors\">\n    <li ng-repeat=\"error in errors\">\n      {{field}} {{error}}\n    </li>\n  </div>\n</ul>\n");
   $templateCache.put("contact/contact.html", "<!--<div class=\"container\" style=\"margin-top: 75px; background-color: #cfcfcf; border-radius: 10px;\">\n	<div class=\"row\">\n      <div class=\"col-md-6 col-md-offset-3\">\n        <div class=\"well well-sm\">\n          <form class=\"form-horizontal\" id=\"contactForm\" name=\"contactForm\">\n          <fieldset>\n            <legend class=\"text-center\">Contact us</legend>\n    \n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Name</label>\n              <div class=\"col-md-9\">\n                <input required ng-model=\"$ctrl.contact.inputName\" id=\"inputName\" name=\"inputName\" type=\"text\" placeholder=\"Your name\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"20\" ng-model-options=\"{  debounce: 500 }\">\n                <span ng-show=\"contactForm.inputName.$error.required && (contactForm.inputName.$dirty || contactForm.inputName.$touched)\">Enter a name</span>\n                <span ng-show=\"contactForm.inputName.$error.minlength || contactForm.inputName.$error.maxlength && (contactForm.inputName.$dirty || contactForm.inputName.$touched)\">Enter between 3 and 20 characters</span>\n              </div>\n            </div>\n    \n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"email\" style=\"max-width: 35%;\">Your E-mail</label>\n              <div class=\"col-md-9\">\n                <input required ng-model=\"$ctrl.contact.inputMail\" name=\"inputMail\" type=\"text\" id=\"inputMail\" class=\"form-control\" placeholder=\"Your email\" ng-pattern=\"/^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$/i\" ng-model-options=\"{  debounce: 500 }\"/>\n                <span ng-show=\"contactForm.inputMail.$error.required && (contactForm.inputMail.$dirty || contactForm.inputMail.$touched)\">Enter a Electronic Mail</span>\n                <span ng-show=\"contactForm.inputMail.$error.pattern\">The format of electronic mail is incorrect</span>\n              </div>\n            </div>\n\n          <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"subject\" style=\"max-width: 35%;\">Your Subject</label>\n            <div class=\"col-md-9\">\n                <select class=\"form-control\" ng-options=\"infoSelect as infoSelect for infoSelect in $ctrl.infoSelect track by infoSelect\" ng-model=\"$ctrl.contact.inputSubject\" name=\"inputSubject\">\n                  <option ng-show=\"$ctrl.showSubject\" value=\"\" selected>-- Select your subject --</option>\n                </select>\n            </div>\n          </div>\n\n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"message\" style=\"max-width: 35%;\">Your message</label>\n              <div class=\"col-md-9\">\n                <textarea style=\"resize: none;\" required ng-model=\"$ctrl.contact.inputMessage\" name=\"inputMessage\" class=\"form-control\" rows=\"4\" cols=\"50\" id=\"inputMessage\" ng-minlength=\"20\" ng-maxlength=\"100\" ng-model-options=\"{  debounce: 500 }\" placeholder=\"Please enter your message here...\"></textarea>\n                <span ng-show=\"contactForm.inputMessage.$error.required && (contactForm.inputMessage.$dirty || contactForm.inputMessage.$touched)\">Introduzca un mensaje</span>\n                <span ng-show=\"contactForm.inputMessage.$error.minlength\">Enter more than 20 characters</span>\n                <span ng-show=\"contactForm.inputMessage.$error.maxlength\">Enter less than 100 characters</span>\n              </div>\n            </div>\n    \n            <div class=\"form-group\">\n              <div class=\"col-md-12 text-right\">\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-show=\"contactForm.inputName.$valid && contactForm.inputMail.$valid && contactForm.inputSubject.$modelValue && contactForm.inputMessage.$valid && $ctrl.showButton\"\n                    ng-click=\"$ctrl.messageContact()\"/>\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-hide=\"contactForm.inputName.$valid && contactForm.inputMail.$valid && contactForm.inputSubject.$modelValue && contactForm.inputMessage.$valid\"\n                    ng-click=\"$ctrl.nvalidContact()\"/>\n              </div>\n            </div>\n          </fieldset>\n          </form>\n        </div>\n      </div>\n	</div>\n</div>-->\n<!---------------------------------------------------------------------------------------------------------------------------------------------->\n<div class=\"jumbotron jumbotron-sm\">\n  <div class=\"container\">\n      <div class=\"row\">\n          <div class=\"col-sm-12 col-lg-12\">\n              <h1 class=\"h1\">\n                  Contact us <small>Feel free to contact us</small></h1>\n          </div>\n      </div>\n  </div>\n</div>\n<div class=\"container\">\n  <div class=\"row\">\n      <div class=\"col-md-8\">\n          <div class=\"well well-sm\">\n              <form id=\"contactForm\" name=\"contactForm\">\n              <div class=\"row\">\n                  <div class=\"col-md-6\">\n                      <div class=\"form-group\">\n                          <label for=\"name\">Name</label>\n                          <input required ng-model=\"$ctrl.contact.inputName\" id=\"inputName\" name=\"inputName\" type=\"text\" placeholder=\"Enter name\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"20\" ng-model-options=\"{  debounce: 500 }\">\n                          <span ng-show=\"contactForm.inputName.$error.required && (contactForm.inputName.$dirty || contactForm.inputName.$touched)\">Enter a name</span>\n                          <span ng-show=\"contactForm.inputName.$error.minlength || contactForm.inputName.$error.maxlength && (contactForm.inputName.$dirty || contactForm.inputName.$touched)\">Enter between 3 and 20 characters</span>\n                      </div>\n                      <div class=\"form-group\">\n                          <label for=\"email\">Email Address</label>\n                          <div class=\"input-group\">\n                              <span class=\"input-group-addon\"><span class=\"glyphicon glyphicon-envelope\"></span>\n                              </span>\n                              <input required ng-model=\"$ctrl.contact.inputMail\" name=\"inputMail\" type=\"text\" id=\"inputMail\" class=\"form-control\" placeholder=\"Enter email\" ng-pattern=\"/^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$/i\" ng-model-options=\"{  debounce: 500 }\"/>\n                              <span ng-show=\"contactForm.inputMail.$error.required && (contactForm.inputMail.$dirty || contactForm.inputMail.$touched)\">Enter a Electronic Mail</span>\n                              <span ng-show=\"contactForm.inputMail.$error.pattern\">The format of electronic mail is incorrect</span>\n                          </div>\n                      </div>\n                      <div class=\"form-group\">\n                          <label for=\"subject\">Subject</label>\n                          <select class=\"form-control\" ng-options=\"infoSelect as infoSelect for infoSelect in $ctrl.infoSelect track by infoSelect\" ng-model=\"$ctrl.contact.inputSubject\" name=\"inputSubject\" style=\"height:35px;\">\n                              <option ng-show=\"$ctrl.showSubject\" value=\"\" selected>-- Select your subject --</option>\n                            </select>\n                      </div>\n                  </div>\n                  <div class=\"col-md-6\">\n                      <div class=\"form-group\">\n                          <label for=\"name\">Message</label>\n                          <textarea style=\"resize: none;\" required ng-model=\"$ctrl.contact.inputMessage\" name=\"inputMessage\" class=\"form-control\" rows=\"9\" cols=\"25\" id=\"inputMessage\" ng-minlength=\"20\" ng-maxlength=\"100\" ng-model-options=\"{  debounce: 500 }\" placeholder=\"Please enter your message here...\"></textarea>\n                          <span ng-show=\"contactForm.inputMessage.$error.required && (contactForm.inputMessage.$dirty || contactForm.inputMessage.$touched)\">Introduzca un mensaje</span>\n                          <span ng-show=\"contactForm.inputMessage.$error.minlength\">Enter more than 20 characters</span>\n                          <span ng-show=\"contactForm.inputMessage.$error.maxlength\">Enter less than 100 characters</span>\n                      </div>\n                  </div>\n                  <div class=\"col-md-12\">\n                          <input class=\"btn btn-primary pull-right\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                          ng-show=\"contactForm.inputName.$valid && contactForm.inputMail.$valid && contactForm.inputSubject.$modelValue && contactForm.inputMessage.$valid && $ctrl.showButton\"\n                          ng-click=\"$ctrl.messageContact()\"/>\n                          <input class=\"btn btn-primary pull-right\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                          ng-hide=\"contactForm.inputName.$valid && contactForm.inputMail.$valid && contactForm.inputSubject.$modelValue && contactForm.inputMessage.$valid\"\n                          ng-click=\"$ctrl.nvalidContact()\"/>\n                  </div>\n              </div>\n              </form>\n          </div>\n      </div>\n      <div class=\"col-md-4\">\n          <form>\n          <legend><span class=\"glyphicon glyphicon-globe\"></span> Our office</legend>\n          <address>\n              <strong>CrowCode, Inc.</strong><br>\n              795 Folsom Ave, Suite 600<br>\n              San Francisco, CA 94107<br>\n              <abbr title=\"Phone\">\n                  P:</abbr>\n              (123) 456-7890\n          </address>\n          <address>\n              <strong>Full Name</strong><br>\n              <a href=\"mailto:#\">crowcodesl@gmail.com</a>\n          </address>\n          </form>\n      </div>\n  </div>\n</div>");
-  $templateCache.put("home/home.html", "<div class=\"home-page\">\n\n  <div style=\"height: 400px\">\n    <div uib-carousel active=\"active\" interval=\"$ctrl.myInterval\" no-wrap=\"$ctrl.noWrapSlides\">\n      <div uib-slide ng-repeat=\"slide in $ctrl.slides track by slide.id\" index=\"slide.id\" style=\"height: 400px\">\n        <img ng-src=\"{{slide.image}}\" class=\"img-fluid\" style=\"filter: blur(2px);\">\n        <div class=\"carousel-caption\" style=\"padding-bottom:100px;\">\n            <img src=\"images/crowcode.svg\">\n          <h2>{{slide.text}}</h2>\n        </div>\n      </div>\n    </div>\n  </div>\n  <div class=\"jumbotron jumbotron-sm\">\n    <div class=\"container\">\n        <div class=\"row\">\n            <div class=\"col-sm-12 col-lg-12\">\n                <h1 class=\"h1\">\n                    Most popular categories</h1>\n            </div>\n        </div>\n    </div>\n  </div>\n\n\n <div class=\"container\">\n     <div class=\"row\" infinite-scroll=\"load()\" infinite-scroll-distance=\'0\' infinite-scroll-immediate-check=\'false\'>\n         <div class=\"col-sm-4\" ng-repeat=\"sector in infoSect\">\n             <div class=\"panel panel-primary\">\n                 <div class=\"panel-heading\">{{sector}}</div>\n                    <img ng-src=\"/images/{{sector}}.svg\"\n                    class=\"img-responsive\" style=\"width:100%\"\n                    ui-sref=\"app.projects({filter:sector})\" />\n             </div><br>\n          </div><br>\n     </div>\n </div><br><br>\n</div>\n<!--<div infinite-scroll=\"loadMore()\" infinite-scroll-distance=\"3\">\n    <img ng-repeat=\'sector in $ctrl.infoSect\' src=\"https://placehold.it/150x80?text=IMAGE\">\n</div>\n\n-->\n");
   $templateCache.put("editor/editor.html", "<div class=\"editor-page\">\n  <div class=\"container page\">\n    <div class=\"row\">\n      <div class=\"col-md-10 offset-md-1 col-xs-12\">\n\n        <list-errors errors=\"$ctrl.errors\"></list-errors>\n\n        <form>\n          <fieldset ng-disabled=\"$ctrl.isSubmitting\">\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control form-control-lg\"\n                ng-model=\"$ctrl.article.title\"\n                type=\"text\"\n                placeholder=\"Article Title\" />\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control\"\n                ng-model=\"$ctrl.article.description\"\n                type=\"text\"\n                placeholder=\"What\'s this article about?\" />\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <textarea class=\"form-control\"\n                rows=\"8\"\n                ng-model=\"$ctrl.article.body\"\n                placeholder=\"Write your article (in markdown)\">\n              </textarea>\n            </fieldset>\n\n            <fieldset class=\"form-group\">\n              <input class=\"form-control\"\n                type=\"text\"\n                placeholder=\"Enter tags\"\n                ng-model=\"$ctrl.tagField\"\n                ng-keyup=\"$event.keyCode == 13 && $ctrl.addTag()\" />\n\n              <div class=\"tag-list\">\n                <span ng-repeat=\"tag in $ctrl.article.tagList\"\n                  class=\"tag-default tag-pill\">\n                  <i class=\"ion-close-round\" ng-click=\"$ctrl.removeTag(tag)\"></i>\n                  {{ tag }}\n                </span>\n              </div>\n            </fieldset>\n\n            <button class=\"btn btn-lg pull-xs-right btn-primary\" type=\"button\" ng-click=\"$ctrl.submit()\">\n              Publish Article\n            </button>\n\n          </fieldset>\n        </form>\n\n      </div>\n    </div>\n  </div>\n</div>\n");
+  $templateCache.put("home/home.html", "<div class=\"home-page\">\n\n  <div style=\"height: 400px\">\n    <div uib-carousel active=\"active\" interval=\"$ctrl.myInterval\" no-wrap=\"$ctrl.noWrapSlides\">\n      <div uib-slide ng-repeat=\"slide in $ctrl.slides track by slide.id\" index=\"slide.id\" style=\"height: 400px\">\n        <img ng-src=\"{{slide.image}}\" class=\"img-fluid\" style=\"filter: blur(2px);\">\n        <div class=\"carousel-caption\" style=\"padding-bottom:100px;\">\n            <img src=\"images/crowcode.svg\">\n          <h2>{{slide.text}}</h2>\n        </div>\n      </div>\n    </div>\n  </div>\n  <div class=\"jumbotron jumbotron-sm\">\n    <div class=\"container\">\n        <div class=\"row\">\n            <div class=\"col-sm-12 col-lg-12\">\n                <h1 class=\"h1\">\n                    Most popular categories</h1>\n            </div>\n        </div>\n    </div>\n  </div>\n\n\n <div class=\"container\">\n     <div class=\"row\" infinite-scroll=\"load()\" infinite-scroll-distance=\'0\' infinite-scroll-immediate-check=\'false\'>\n         <div class=\"col-sm-4\" ng-repeat=\"sector in infoSect\">\n             <div class=\"panel panel-primary\">\n                 <div class=\"panel-heading\">{{sector}}</div>\n                    <img ng-src=\"/images/{{sector}}.svg\"\n                    class=\"img-responsive\" style=\"width:100%\"\n                    ui-sref=\"app.projects({filter:sector})\" />\n             </div><br>\n          </div><br>\n     </div>\n </div><br><br>\n</div>\n<!--<div infinite-scroll=\"loadMore()\" infinite-scroll-distance=\"3\">\n    <img ng-repeat=\'sector in $ctrl.infoSect\' src=\"https://placehold.it/150x80?text=IMAGE\">\n</div>\n\n-->\n");
   $templateCache.put("layout/app-view.html", "<app-header></app-header>\n\n<div ui-view></div>\n\n<app-footer></app-footer>\n");
   $templateCache.put("layout/footer.html", "<footer>\n  <div class=\"container\">\n    <a class=\"logo-font\" ui-sref=\"app.home\" ng-bind=\"::$ctrl.appName | lowercase\"></a>\n    <span class=\"attribution\">\n      &copy; {{::$ctrl.date | date:\'yyyy\'}}.\n      A crowdfounding code website <a ui-sref=\"app.home\">CrowCode</a>.\n      Code licensed under MIT.\n    </span>\n  </div>\n</footer>\n");
   $templateCache.put("layout/header.html", "<nav class=\"navbar navbar-light\" style=\"margin-bottom:0px;\">\n  <div class=\"container\" style=\"font-size:18px;\">\n\n    <a class=\"navbar-brand\" style=\"height:65px;\"\n      ui-sref=\"app.home\">\n      <img style=\"height: 100%;\" src=\"images/crowcode.svg\">\n    </a>\n\n    <!-- Show this for logged out users -->\n    <ul show-authed=\"false\"\n      class=\"nav navbar-nav pull-xs-right\">\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.home\">\n          Home\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.projects\">\n          Projects\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.contact\">\n          Contact\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n          <a class=\"nav-link\"\n            ui-sref-active=\"active\"\n            ui-sref=\"app.login\">\n            Login\n          </a>\n        </li>\n\n    </ul>\n\n    <!-- Show this for logged in users -->\n    <ul show-authed=\"true\"\n      class=\"nav navbar-nav pull-xs-right\">\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.home\">\n          Home\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.projects\">\n          Projects\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.createproj\">\n          New Project\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.contact\">\n          Contact\n        </a>\n      </li>\n\n      <li class=\"nav-item\" ng-show=\"{{$ctrl.currentUser.type === \'admin\'}}\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.adminpanel\">\n          Admin Panel\n        </a>\n      </li>\n\n      <li class=\"nav-item\">\n        <a class=\"nav-link\"\n          ui-sref-active=\"active\"\n          ui-sref=\"app.profile.main({ username: $ctrl.currentUser.username})\">\n          {{$ctrl.currentUser.username}}\n          <img ng-src=\"{{$ctrl.currentUser.image}}\" class=\"user-pic\" />\n        </a>\n      </li>\n\n    </ul>\n\n\n  </div>\n</nav>\n");
   $templateCache.put("profile/profile-articles.html", "<article-list limit=\"5\" list-config=\"$ctrl.listConfig\"></article-list>\n");
   $templateCache.put("profile/profile.html", "<div class=\"profile-page\">\n\n  <!-- User\'s basic info & action buttons -->\n  <div class=\"user-info\">\n    <div class=\"container\">\n      <div class=\"row\">\n        <div class=\"col-xs-12 col-md-10 offset-md-1\">\n \n          <img ng-src=\"{{::$ctrl.profile.image}}\" class=\"user-img\" />\n          <h4 ng-bind=\"::$ctrl.profile.username\"></h4>\n          <p ng-bind=\"::$ctrl.profile.bio\"></p>\n \n          <a ui-sref=\"app.settings\"\n            class=\"btn btn-sm btn-outline-secondary action-btn\"\n            ng-show=\"$ctrl.isUser\">\n            <i class=\"ion-gear-a\"></i> Edit Profile Settings\n          </a>\n          \n          <button class=\"btn btn-sm btn-outline-secondary action-btn\" ng-click=\"$ctrl.logOut()\" style=\"margin-left:2%;\">Log out</button>\n          <follow-btn user=\"$ctrl.profile\" ng-hide=\"$ctrl.isUser\"></follow-btn>\n \n        </div>\n      </div>\n    </div>\n  </div>\n \n  <!-- Container where User\'s posts & favs are list w/ toggle tabs -->\n  <div class=\"container\">\n    <div class=\"row\">\n \n      <div class=\"col-xs-12 col-md-10 offset-md-1\">\n \n        <!-- Tabs for switching between author articles & favorites -->\n        <div class=\"articles-toggle\">\n          <ul class=\"nav nav-pills outline-active\">\n \n            <li class=\"nav-item\">\n              <a class=\"nav-link\"\n                ng-click=\"$ctrl.seePersonalProjects()\"\n                style=\"cursor: pointer;\">\n                My Projects\n              </a>\n            </li>\n           \n            <li class=\"nav-item\">\n              <a class=\"nav-link\"\n                ng-click=\"$ctrl.seeInvertedProjects()\"\n                style=\"cursor: pointer;\">\n                Favorited Articles\n              </a>\n            </li>\n \n          </ul>\n        </div>\n \n      </div>\n \n    <!-- End row & container divs -->\n    </div>\n  </div>\n  <div class=\"container\" ng-repeat=\"project in $ctrl.myProjects\" ng-show=\"$ctrl.personalProjects\">\n      <div class=\"row\">\n      <div class=\"well\">\n        <h1 class=\"text-center\">{{project.name}}</h1>\n        <div class=\"list-group\">\n          <div class=\"media col-md-3\">\n              <figure class=\"pull-left\">\n                  <img class=\"media-object img-rounded img-responsive\" src=\"http://placehold.it/350x250\" alt=\"placehold.it/350x250\" >\n              </figure>\n          </div>\n          <div class=\"col-md-6\">\n              <h4 class=\"list-group-item-heading\"> {{project.company}} </h4>\n              <p class=\"list-group-item-text\">{{project.desc}}</p>\n          </div>\n          <div class=\"col-md-3 text-center\">\n              <button type=\"button\" class=\"btn btn-primary btn-lg btn-block\">See</button>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n \n  <div class=\"container\" ng-repeat=\"invest in $ctrl.investedProj\" ng-show=\"$ctrl.invertedProjects\">\n      <div class=\"row\">\n      <div class=\"well\">\n        <h1 class=\"text-center\">{{invest.name}}</h1>\n        <div class=\"list-group\">\n          <div class=\"media col-md-3\">\n              <figure class=\"pull-left\">\n                  <img class=\"media-object img-rounded img-responsive\" src=\"http://placehold.it/350x250\" alt=\"placehold.it/350x250\" >\n              </figure>\n          </div>\n          <div class=\"col-md-6\">\n              <h4 class=\"list-group-item-heading\"> {{invest.company}} </h4>\n              <p class=\"list-group-item-text\">{{invest.desc}}</p>\n          </div>\n          <div class=\"col-md-3 text-center\">\n              <button type=\"button\" class=\"btn btn-primary btn-lg btn-block\" id=\"{{invest.slug}}\" ng-click=\"seeProj()\">See</button>\n              <button type=\"button\" class=\"btn btn-primary btn-lg btn-block\" id=\"{{invest.slug}}\" ng-click=\"updateProj()\">Update</button>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n \n </div>");
-  $templateCache.put("projects/createproj.html", "<button type=\"button\" class=\"btn btn-default\" ng-click=\"$ctrl.open()\">Open me!</button>\n<br /><span ng-if=\"missingNumber > 0\">You need {{missingNumber}} rewards to save the project</span>\n<div class=\"container\" style=\"margin-top: 75px; background-color: #cfcfcf; border-radius: 10px;\">\n	<div class=\"row\">\n      <div class=\"col-md-6 col-md-offset-3\">\n        <div class=\"well well-sm\">\n          <form class=\"form-horizontal\" id=\"createprojForm\" name=\"createprojForm\" ng-disabled=\"$ctrl.disabledForm\">\n          <fieldset>\n            <legend class=\"text-center\">Create Projects</legend>\n    \n            <!-- Name input -->\n            <div class=\"form-group\">\n                <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Name Project</label>\n                <div class=\"col-md-9\">\n                    <input required ng-model=\"$ctrl.createproj.inputNameproj\" id=\"inputNameproj\" name=\"inputNameproj\" type=\"text\" placeholder=\"Your name\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"30\" ng-model-options=\"{  debounce: 500 }\">\n                    <span ng-show=\"createprojForm.inputNameproj.$error.required && (createprojForm.inputNameproj.$dirty || createprojForm.inputNameproj.$touched)\">Enter a name</span>\n                    <span ng-show=\"createprojForm.inputNameproj.$error.minlength || createprojForm.inputNameproj.$error.maxlength && (createprojForm.inputNameproj.$dirty || createprojForm.inputNameproj.$touched)\">Enter between 3 and 30 characters</span>\n                </div>\n            </div>\n\n            <!-- CompanyName input -->\n            <div class=\"form-group\">\n                <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Company(person)</label>\n                <div class=\"col-md-9\">\n                    <input required ng-model=\"$ctrl.createproj.inputCompany\" id=\"inputCompany\" name=\"inputCompany\" type=\"text\" placeholder=\"Your company name\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"30\" ng-model-options=\"{  debounce: 500 }\">\n                    <span ng-show=\"createprojForm.inputCompany.$error.required && (createprojForm.inputCompany.$dirty || createprojForm.inputCompany.$touched)\">Enter a company</span>\n                    <span ng-show=\"createprojForm.inputCompany.$error.minlength || createprojForm.inputCompany.$error.maxlength && (createprojForm.inputCompany.$dirty || createprojForm.inputCompany.$touched)\">Enter between 3 and 30 characters</span>\n                </div>\n            </div>\n\n            <!-- Money Goal input -->\n            <div class=\"form-group\">\n                <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Money Goal</label>\n                <div class=\"col-md-9\">\n                    <input required ng-model=\"$ctrl.createproj.inputGoal\" id=\"inputGoal\" name=\"inputGoal\" type=\"number\" placeholder=\"Your money goal\" class=\"form-control\" min=\"100\" max=\"500000\" ng-model-options=\"{  debounce: 500 }\">\n                    <span ng-show=\"createprojForm.inputGoal.$error.required && (createprojForm.inputGoal.$dirty || createprojForm.inputGoal.$touched)\">Enter a money goal</span>\n                    <span ng-show=\"createprojForm.inputGoal.$error.min || createprojForm.inputGoal.$error.max && (createprojForm.inputGoal.$dirty || createprojForm.inputGoal.$touched)\">Enter between 100 and 500000 euros</span>\n                </div>\n            </div>\n\n          <!-- Sector select -->\n          <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"subject\" style=\"max-width: 35%;\">Your Sector</label>\n            <div class=\"col-md-9\">\n                <select class=\"form-control\" ng-options=\"selectSector as selectSector for selectSector in $ctrl.selectSector track by selectSector\" ng-model=\"$ctrl.createproj.selectSector\" name=\"selectSector\">\n                  <option ng-show=\"$ctrl.showSector\" value=\"\" selected>-- Select your sector --</option>\n                </select>\n            </div>\n          </div>\n\n            <!-- Description body -->\n            <div class=\"form-group\">\n              <label class=\"col-md-3 control-label\" for=\"message\" style=\"max-width: 50%;\">Project Description</label>\n              <div class=\"col-md-9\">\n                <textarea style=\"resize: none;\" required ng-model=\"$ctrl.createproj.inputDesc\" name=\"inputDesc\" class=\"form-control\" rows=\"4\" cols=\"50\" id=\"inputDesc\" ng-minlength=\"100\" ng-maxlength=\"10000\" ng-model-options=\"{  debounce: 500 }\" placeholder=\"Please enter your message here...\"></textarea>\n                <span ng-show=\"createprojForm.inputDesc.$error.required && (createprojForm.inputDesc.$dirty || createprojForm.inputDesc.$touched)\">Enter a description</span>\n                <span ng-show=\"createprojForm.inputDesc.$error.minlength\">Enter more than 100 characters</span>\n                <span ng-show=\"createprojForm.inputDesc.$error.maxlength\">Enter less than 10000 characters</span>\n              </div>\n            </div>\n    \n            <!-- Form actions -->\n            <div class=\"form-group\">\n              <div class=\"col-md-12 text-right\">\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-show=\"createprojForm.inputNameproj.$valid && createprojForm.inputCompany.$valid && createprojForm.inputGoal.$valid && createprojForm.selectSector.$modelValue && createprojForm.inputDesc.$valid\"\n                    ng-click=\"$ctrl.messageCreateP()\"/>\n                    <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                    ng-hide=\"createprojForm.inputNameproj.$valid && createprojForm.inputCompany.$valid && createprojForm.inputGoal.$valid && createprojForm.selectSector.$modelValue && createprojForm.inputDesc.$valid\"\n                    ng-click=\"$ctrl.nvalidCreateP()\"/>\n              </div>\n            </div>\n          </fieldset>\n          </form>\n        </div>\n      </div>\n	</div>\n</div>\n");
+  $templateCache.put("projects/createproj.html", "<div class=\"jumbotron jumbotron-sm\">\n  <div class=\"container\">\n      <div class=\"row\">\n          <div class=\"col-sm-12 col-lg-12\">\n              <h1 class=\"h1\">\n                Create Project\n              </h1>\n          </div>\n      </div>\n  </div>\n</div>\n<div style=\"margin-top: 75px; text-align: center; margin: 5%; \">\n    <div class=\"well well-sm\">\n      <form class=\"form-horizontal\" id=\"createprojForm\" name=\"$ctrl.createprojForm\" ng-disabled=\"$ctrl.disabledForm\">\n      <fieldset>\n        <!-- Name input -->\n        <div style=\"width:46%; display:inline-block; margin: 1%; \">\n          <p style=\"text-align:left; font-weight: bold;\">Name project</p>\n          <input required ng-model=\"$ctrl.createproj.inputNameproj\" id=\"inputNameproj\" name=\"inputNameproj\" type=\"text\" placeholder=\"Name project\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"30\" ng-model-options=\"{  debounce: 500 }\">\n          <span ng-show=\"$ctrl.createprojForm.inputNameproj.$error.required && ($ctrl.createprojForm.inputNameproj.$dirty || $ctrl.createprojForm.inputNameproj.$touched)\">Enter a name</span>\n          <span ng-show=\"$ctrl.createprojForm.inputNameproj.$error.minlength || $ctrl.createprojForm.inputNameproj.$error.maxlength && ($ctrl.createprojForm.inputNameproj.$dirty || $ctrl.createprojForm.inputNameproj.$touched)\">Enter between 3 and 30 characters</span>\n        </div>\n\n        <!-- CompanyName input -->\n        <div style=\"width:46%; display:inline-block; margin: 1%;\">\n          <p style=\"text-align:left; font-weight: bold;\">Company Name</p>\n          <input required ng-model=\"$ctrl.createproj.inputCompany\" id=\"inputCompany\" name=\"inputCompany\" type=\"text\" placeholder=\"Your company name\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"30\" ng-model-options=\"{  debounce: 500 }\">\n          <span ng-show=\"$ctrl.createprojForm.inputCompany.$error.required && ($ctrl.createprojForm.inputCompany.$dirty || $ctrl.createprojForm.inputCompany.$touched)\">Enter a company</span>\n          <span ng-show=\"$ctrl.createprojForm.inputCompany.$error.minlength || $ctrl.createprojForm.inputCompany.$error.maxlength && ($ctrl.createprojForm.inputCompany.$dirty || $ctrl.createprojForm.inputCompany.$touched)\">Enter between 3 and 30 characters</span>\n        </div>\n\n        <!-- Sector select -->\n        <div style=\"width:46%; display:inline-block; margin: 1%; vertical-align: top;\">\n          <p style=\"text-align:left; font-weight: bold;\">Select a sector</p>\n          <select class=\"form-control\" style=\"height:34px;\" ng-options=\"selectSector as selectSector for selectSector in $ctrl.selectSector track by selectSector\" ng-model=\"$ctrl.createproj.selectSector\" name=\"selectSector\">\n            <option ng-show=\"$ctrl.showSector\" value=\"\" selected>-- Select your sector --</option>\n          </select>\n        </div>\n\n        <!-- Money Goal input -->\n        <div style=\"width:46%; display:inline-block; margin: 1%; \">\n          <p style=\"text-align:left; font-weight: bold;\">Money goal</p>\n          <input required ng-model=\"$ctrl.createproj.inputGoal\" id=\"inputGoal\" name=\"inputGoal\" type=\"number\" placeholder=\"Your money goal\" class=\"form-control\" min=\"100\" max=\"500000\" ng-model-options=\"{  debounce: 500 }\">\n          <span ng-show=\"$ctrl.createprojForm.inputGoal.$error.required && ($ctrl.createprojForm.inputGoal.$dirty || $ctrl.createprojForm.inputGoal.$touched)\">Enter a money goal</span>\n          <span ng-show=\"$ctrl.createprojForm.inputGoal.$error.min || $ctrl.createprojForm.inputGoal.$error.max && ($ctrl.createprojForm.inputGoal.$dirty || $ctrl.createprojForm.inputGoal.$touched)\">Enter between 100 and 500000 euros</span>\n        </div>\n\n        <!-- Upload Image -->\n        <div style=\"width:46%; display:inline-block; margin: 1%; text-align: left\">\n          <p style=\"text-align:left; font-weight: bold;\">Preview Image</p>\n          <input required type=\"file\" ngf-select ng-model=\"$ctrl.file\" name=\"file\" accept=\"image/*, video/*\" ngf-max-size=\"10MB\"/>\n            <img style=\"width:150px;\" ng-show=\"!$ctrl.file\" ngf-thumbnail=\"\'/thumb.jpg\'\"/>\n            <img style=\"width:150px;\" ng-show=\"$ctrl.file\" ngf-thumbnail=\"$ctrl.file\" />\n            <video ng-show=\"$ctrl.file\" ngf-thumbnail=\"$ctrl.file\" width=\"150px\" controls></video><br />\n            <i ng-show=\"$ctrl.createprojForm.file.$error.required && ($ctrl.createprojForm.file.$dirty || $ctrl.createprojForm.file.$touched)\">*required</i><br>\n            <i ng-show=\"$ctrl.createprojForm.file.$error.maxSize\">File too large \n            {{$ctrl.file.size / 1000000|number:1}}MB: max 10M</i>\n            <p style=\"text-align:left; font-weight: bold;\">* Remember, the first file will be the main one.</p>\n          <button class=\"btn btn-success\" type=\"button\" ng-click=\"$ctrl.submit()\">Save image</button>\n        </div>\n        <div style=\"width:46%; display:inline-block; margin: 1%; vertical-align: top;\">\n          <p style=\"text-align:left; font-weight: bold;\">Saved images</p>\n          <div ng-repeat=\"image in $ctrl.imagesUpload\" style=\"width: 30%; display: inline-block; margin: 1%;\" ng-click=\"$ctrl.deleteFile(image,\'image\')\">\n            <img style=\"width: 100%;\" ng-src=\"http://localhost:3000/uploads/{{image}}\" />\n          </div>\n          <div ng-repeat=\"video in $ctrl.videoUpload\" style=\"width: 30%; display: inline-block; margin: 1%;\">\n            <video width=\"100%\" ng-src=\"http://localhost:3000/uploads/{{video}}\"controls>\n              Tu navegador no admite el elemento <code>video</code>.\n            </video>\n            <span ng-click=\"$ctrl.deleteFile(video,\'video\')\">Delete</span>\n          </div>\n        </div>\n\n        <!-- Description body -->\n        <div  style=\"width:70%; display:inline-block; margin: 1%; \">\n          <p style=\"text-align:left; font-weight: bold;\">Description</p>\n          <textarea style=\"resize: none;\" required ng-model=\"$ctrl.createproj.inputDesc\" name=\"inputDesc\" class=\"form-control\" rows=\"4\" cols=\"50\" id=\"inputDesc\" ng-minlength=\"100\" ng-maxlength=\"10000\" ng-model-options=\"{  debounce: 500 }\" placeholder=\"Please enter your message here...\"></textarea>\n          <span ng-show=\"$ctrl.createprojForm.inputDesc.$error.required && ($ctrl.createprojForm.inputDesc.$dirty || $ctrl.createprojForm.inputDesc.$touched)\">Enter a description</span>\n          <span ng-show=\"$ctrl.createprojForm.inputDesc.$error.minlength\">Enter more than 100 characters</span>\n          <span ng-show=\"$ctrl.createprojForm.inputDesc.$error.maxlength\">Enter less than 10000 characters</span>\n        </div>\n\n        <div  style=\"width:22%; display:inline-block; margin: 1%; vertical-align:bottom; text-align: left; \">\n          <p style=\"font-weight: bold;\">Create Reward</p>\n          <button type=\"button\" class=\"btn btn-default\" ng-click=\"$ctrl.open()\">Create Reward</button><br />\n          <span ng-if=\"missingNumber > 0\">You need {{missingNumber}} rewards to save the project</span>\n        </div>\n\n        <!-- Form actions -->\n        <div class=\"form-group\">\n          <div class=\"col-md-12 text-right\">\n                <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                ng-show=\"$ctrl.createprojForm.inputNameproj.$valid && $ctrl.createprojForm.inputCompany.$valid && $ctrl.createprojForm.inputGoal.$valid && $ctrl.createprojForm.selectSector.$modelValue && $ctrl.createprojForm.inputDesc.$valid\"\n                ng-click=\"$ctrl.messageCreateP()\"/>\n                <input class=\"btn btn-primary btn-lg\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Send\"\n                ng-hide=\"$ctrl.createprojForm.inputNameproj.$valid && $ctrl.createprojForm.inputCompany.$valid && $ctrl.createprojForm.inputGoal.$valid && $ctrl.createprojForm.selectSector.$modelValue && $ctrl.createprojForm.inputDesc.$valid\"\n                ng-click=\"$ctrl.nvalidCreateP()\"/>\n          </div>\n        </div>\n      </fieldset>\n      </form>\n    </div>\n</div>\n");
   $templateCache.put("projects/detailsproj.html", "<div class=\"container\">\n    <div class=\"row\">\n        <div class=\"col-lg-8\">\n            <br><br>\n            <h1 class=\"mt-4\">{{$ctrl.infoProj.name}}</h1>\n            <p class=\"lead\">\n                by <a href=\"#\">{{$ctrl.infoProj.company}}</a>\n            </p>\n            <hr>\n            <p>Created at {{$ctrl.infoProj.createdAt}}</p>\n            <hr>\n            <img class=\"img-fluid rounded\" src=\"http://placehold.it/900x300\" alt=\"\">\n            <hr>\n            <p class=\"lead\">{{$ctrl.infoProj.desc}}</p>\n            <blockquote class=\"blockquote\">\n            <p class=\"mb-0\">Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n            Integer posuere erat a ante.</p>\n            \n            <footer class=\"blockquote-footer\">{{$ctrl.infoProj.company}} in\n            <cite title=\"Source Title\">{{$ctrl.infoProj.name}}</cite>\n            </footer>\n            </blockquote>\n            <hr>\n            <!-- Comments Form -->\n\n        </div>\n        <br>\n\n        <!-- Sidebar Widgets Column -->\n        <div class=\"col-md-4\">\n            <br><br><br><br><br><br><br>\n            <div class=\"card my-4\">\n                <h4 class=\"card-header\">MONEY GOAL</h4>\n                <div class=\"card-body\" style=\"padding: 30px;\">\n                    <div class=\"row\">\n                        <div class=\"col-lg-2\">\n                            00$\n                        </div>\n                        <div class=\"col-lg-7\">\n                            <div class=\"progress\">\n                                <progress class=\"progress-bar\" style=\"width: 100%\" value=\"500\" max=\"{{$ctrl.infoProj.goal}}\"></progress>\n                            </div>\n                        </div>\n                        <div class=\"col-lg-2\">\n                            {{$ctrl.infoProj.goal}}$\n                        </div>\n\n                        <!--<button id=\"customButton\">Purchase</button>-->\n                    </div>\n                </div>\n            </div>\n            <h4 class=\"card-header\">REWARDS</h4>\n            <div class=\"card w-50\" ng-repeat=\"project in $ctrl.rewardProj\" style=\"height:200px; padding:40px;\">\n                <div class=\"card-body\">\n                  <h4 class=\"card-title\">{{project.title}}</h4>\n                  <p class=\"card-text\">{{project.money}},00€</p>\n                  <p class=\"card-text\">{{project.desc}}.</p>\n                  <button ng-click=\"pay()\" id=\"project._id\">Purchase</button>\n                </div>\n            </div>\n        </div>\n    </div>\n</div>\n");
   $templateCache.put("projects/myModalContent.html", "<div class=\"modal-header\">\n    <h3 class=\"modal-title\" id=\"modal-title\">Rewards</h3>\n</div>\n<div class=\"modal-body\" id=\"modal-body\">\n    <!-- Rewards content -->\n    <form class=\"form-horizontal\" id=\"formReward\" name=\"formReward\">\n        <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Title Reward</label><br />\n            <div class=\"col-md-9\">\n                <input required ng-model=\"$ctrl.reward.inputTitle\" id=\"inputTitle\" name=\"inputTitle\" type=\"text\" placeholder=\"Title reward\" class=\"form-control\" ng-minlength=\"3\" ng-maxlength=\"30\" ng-model-options=\"{  debounce: 500 }\">\n                <span ng-show=\"formReward.inputTitle.$error.required && (formReward.inputTitle.$dirty || formReward.inputTitle.$touched)\">Enter a title</span>\n                <span ng-show=\"formReward.inputTitle.$error.minlength || formReward.inputTitle.$error.maxlength && (formReward.inputTitle.$dirty || formReward.inputTitle.$touched)\">Enter between 3 and 30 characters</span>\n            </div>\n        </div>\n\n        <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Money to pay</label><br />\n            <div class=\"col-md-9\">\n                <input required ng-model=\"$ctrl.reward.inputMoney\" id=\"inputMoney\" name=\"inputMoney\" type=\"number\" placeholder=\"Your money goal\" class=\"form-control\" min=\"1\" max=\"10000\" ng-model-options=\"{  debounce: 500 }\">\n                <span ng-show=\"formReward.inputMoney.$error.required && (formReward.inputMoney.$dirty || formReward.inputMoney.$touched)\">Enter money to pay</span>\n                <span ng-show=\"formReward.inputMoney.$error.min || formReward.inputMoney.$error.max && (formReward.inputMoney.$dirty || formReward.inputMoney.$touched)\">Enter between 1 and 10000 euros</span>\n            </div>\n        </div>\n\n        <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"name\" style=\"max-width: 35%;\">Quantity</label><br />\n            <div class=\"col-md-9\">\n                <input required ng-model=\"$ctrl.reward.inputQuantity\" id=\"inputQuantity\" name=\"inputQuantity\" type=\"number\" placeholder=\"Quantity of the product\" class=\"form-control\" min=\"1\" max=\"1000\" ng-model-options=\"{  debounce: 500 }\">\n                <span ng-show=\"formReward.inputQuantity.$error.required && (formReward.inputQuantity.$dirty || formReward.inputQuantity.$touched)\">Enter a quantity</span>\n                <span ng-show=\"formReward.inputQuantity.$error.min || formReward.inputQuantity.$error.max && (formReward.inputQuantity.$dirty || formReward.inputQuantity.$touched)\">Enter between 1 and 1000</span>\n            </div>\n        </div>\n\n        <div class=\"form-group\">\n            <label class=\"col-md-3 control-label\" for=\"message\" style=\"max-width: 50%;\">Description</label><br />\n            <div class=\"col-md-9\">\n                <textarea style=\"resize: none;\" required ng-model=\"$ctrl.reward.inputRDesc\" name=\"inputRDesc\" class=\"form-control\" rows=\"4\" cols=\"50\" id=\"inputRDesc\" ng-minlength=\"20\" ng-maxlength=\"200\" ng-model-options=\"{  debounce: 500 }\" placeholder=\"Please enter your reward description...\"></textarea>\n                <span ng-show=\"formReward.inputRDesc.$error.required && (formReward.inputRDesc.$dirty || formReward.inputRDesc.$touched)\">Enter a description</span>\n                <span ng-show=\"formReward.inputRDesc.$error.minlength\">Enter more than 20 characters</span>\n                <span ng-show=\"formReward.inputRDesc.$error.maxlength\">Enter less than 200 characters</span>\n            </div>\n        </div>\n    </form>\n</div>\n<div class=\"modal-footer\">\n    <input class=\"btn btn-primary\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Save\"\n                    ng-show=\"formReward.inputTitle.$valid && formReward.inputMoney.$valid && formReward.inputQuantity.$valid && formReward.inputRDesc.$valid\"\n                    ng-click=\"$ctrl.saveReward()\"/>\n                    <input class=\"btn btn-primary\" type=\"submit\" id=\"submitBtn\" name=\"submit\" value=\"Save\"\n                    ng-hide=\"formReward.inputTitle.$valid && formReward.inputMoney.$valid && formReward.inputQuantity.$valid && formReward.inputRDesc.$valid\"\n                    ng-click=\"$ctrl.nvalidCreateP()\"/>\n    <button class=\"btn btn-warning\" type=\"button\" ng-click=\"$ctrl.cancel()\">Cancel</button>\n</div>");
   $templateCache.put("projects/projects.html", "<div class=\"jumbotron jumbotron-sm\">\n    <div class=\"container\">\n        <div class=\"row\">\n            <div class=\"col-sm-12 col-lg-12\">\n                <h1 class=\"h1\">\n                    Projects <small>Take a look!</small></h1>\n            </div>\n        </div>\n    </div>\n  </div>\n\n<div ng-show=\"$ctrl.showFilter\" style=\"width:18%; margin-left:5%;\">\n    <strong>{{$ctrl.filter}}</strong>\n    <button type=\"button\" class=\"close\" aria-label=\"Close\" ng-click=\"$ctrl.clearFilter()\">\n      <span aria-hidden=\"true\">&times;</span>\n    </button>\n  </div>\n<div class=\"container\"><br><br>\n    <div class=\"col-md-4\">\n        <div class=\"card my-4\">\n            <h5 class=\"card-header\">Search</h5>\n            <div class=\"card-body\">\n                <div class=\"input-group\">\n                    <form class=\"form-search\">\n                        <input type=\"text\" ng-model=\"$ctrl.search.name\" ng-change=\"$ctrl.changeSearch()\" placeholder=\"Search projects\" \n                        uib-typeahead=\"project.name for project in $ctrl.infoProj | filter:{name:$viewValue} | limitTo:5\" class=\"form-control\">\n                    </form>\n                </div>\n            </div>\n        </div>\n    </div><br><br><br><br><br><br>\n    <div class=\"container\">\n        <div class=\"row\">\n            <div class=\"col-sm-4\" ng-repeat=\"project in $ctrl.infoProj | filter:$ctrl.search:strict | limitTo:$ctrl.itemsPerPage\">\n                <div class=\"panel panel-primary\">\n                    <div class=\"panel-heading\">{{project.name}}</div>\n                    <div class=\"panel-body\" style=\"padding:0px;\">\n                        <img src=\"https://placehold.it/150x80?text=IMAGE\"\n                        class=\"img-responsive\" style=\"width:100%\" id=\"{{project.slug}}\"\n                        ng-click=\"openDetails()\">\n                    </div>\n                    <div class=\"panel-footer\">{{project.desc}}<br></div>\n                </div><br>\n            </div><br>\n        </div>\n    </div><br><br>\n    <center><ul uib-pagination class=\"pagination-sm\" boundary-link-numbers=\"true\"\n        total-items=\"$ctrl.infoPager.length\" ng-model=\"$ctrl.currentPage\"\n        items-per-page=\"$ctrl.itemsPerPage\" ng-change=\"$ctrl.changePage()\">\n        </ul></center>\n</div>\n");
@@ -58807,7 +61712,7 @@ angular.module("templates", []).run(["$templateCache", function ($templateCache)
   $templateCache.put("components/buttons/follow-btn.html", "<button\n  class=\"btn btn-sm action-btn\"\n  ng-class=\"{ \'disabled\': $ctrl.isSubmitting,\n              \'btn-outline-secondary\': !$ctrl.user.following,\n              \'btn-secondary\': $ctrl.user.following }\"\n  ng-click=\"$ctrl.submit()\">\n  <i class=\"ion-plus-round\"></i>\n  &nbsp;\n  {{ $ctrl.user.following ? \'Unfollow\' : \'Follow\' }} {{ $ctrl.user.username }}\n</button>\n");
 }]);
 
-},{}],79:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 'use strict';
 
 authInterceptor.$inject = ["JWT", "AppConstants", "$window", "$q"];
@@ -58842,7 +61747,7 @@ function authInterceptor(JWT, AppConstants, $window, $q) {
 
 exports.default = authInterceptor;
 
-},{}],80:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 'use strict';
 
 ContactConfig.$inject = ["$stateProvider"];
@@ -58863,7 +61768,7 @@ function ContactConfig($stateProvider) {
 
 exports.default = ContactConfig;
 
-},{}],81:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -58928,7 +61833,7 @@ ContactCtrl.$inject = ["Contact", "Toastr", "$timeout", "$state"];
 
 exports.default = ContactCtrl;
 
-},{}],82:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -58962,7 +61867,7 @@ contactModule.controller('ContactCtrl', _contact4.default);
 
 exports.default = contactModule;
 
-},{"./contact.config":80,"./contact.controller":81,"angular":17}],83:[function(require,module,exports){
+},{"./contact.config":82,"./contact.controller":83,"angular":17}],85:[function(require,module,exports){
 'use strict';
 
 EditorConfig.$inject = ["$stateProvider"];
@@ -59005,7 +61910,7 @@ function EditorConfig($stateProvider) {
 
 exports.default = EditorConfig;
 
-},{}],84:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59074,7 +61979,7 @@ var EditorCtrl = function () {
 
 exports.default = EditorCtrl;
 
-},{}],85:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59108,7 +62013,7 @@ editorModule.controller('EditorCtrl', _editor4.default);
 
 exports.default = editorModule;
 
-},{"./editor.config":83,"./editor.controller":84,"angular":17}],86:[function(require,module,exports){
+},{"./editor.config":85,"./editor.controller":86,"angular":17}],88:[function(require,module,exports){
 'use strict';
 
 HomeConfig.$inject = ["$stateProvider"];
@@ -59136,7 +62041,7 @@ function HomeConfig($stateProvider) {
 
 exports.default = HomeConfig;
 
-},{}],87:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59170,7 +62075,7 @@ HomeCtrl.$inject = ["AppConstants", "$scope", "sectors"];
 
 exports.default = HomeCtrl;
 
-},{}],88:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59208,7 +62113,7 @@ homeModule.controller('HomeCtrl', _home4.default);
 
 exports.default = homeModule;
 
-},{"./home.config":86,"./home.controller":87,"angular":17,"ng-infinite-scroll":41}],89:[function(require,module,exports){
+},{"./home.config":88,"./home.controller":89,"angular":17,"ng-infinite-scroll":43}],91:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59236,7 +62141,7 @@ var AppFooter = {
 
 exports.default = AppFooter;
 
-},{}],90:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59268,7 +62173,7 @@ var AppHeader = {
 
 exports.default = AppHeader;
 
-},{}],91:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59300,7 +62205,7 @@ layoutModule.component('appFooter', _footer2.default);
 
 exports.default = layoutModule;
 
-},{"./footer.component":89,"./header.component":90,"angular":17}],92:[function(require,module,exports){
+},{"./footer.component":91,"./header.component":92,"angular":17}],94:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59340,7 +62245,7 @@ profileModule.controller('ProfileArticlesCtrl', _profileArticles2.default);
 
 exports.default = profileModule;
 
-},{"./profile-articles.controller":93,"./profile.config":94,"./profile.controller":95,"angular":17}],93:[function(require,module,exports){
+},{"./profile-articles.controller":95,"./profile.config":96,"./profile.controller":97,"angular":17}],95:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59380,7 +62285,7 @@ ProfileArticlesCtrl.$inject = ["profile", "$state", "$rootScope"];
 
 exports.default = ProfileArticlesCtrl;
 
-},{}],94:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 'use strict';
 
 ProfileConfig.$inject = ["$stateProvider"];
@@ -59438,7 +62343,7 @@ function ProfileConfig($stateProvider) {
 };
 exports.default = ProfileConfig;
 
-},{}],95:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59527,7 +62432,7 @@ export default ProfileCtrl;
 
 */
 
-},{}],96:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -59536,11 +62441,12 @@ Object.defineProperty(exports, "__esModule", {
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var CreateprojCtrl = function CreateprojCtrl(Projects, Toastr, $timeout, $state, User, $uibModal, $rootScope) {
+var CreateprojCtrl = function CreateprojCtrl(Projects, Toastr, $timeout, $state, User, $uibModal, $rootScope, Upload) {
     'ngInject';
 
     _classCallCheck(this, CreateprojCtrl);
 
+    var _this = this;
     $rootScope.rewards = [];
     this.showSector = false;
     this.disabledForm = false;
@@ -59577,20 +62483,72 @@ var CreateprojCtrl = function CreateprojCtrl(Projects, Toastr, $timeout, $state,
                 slug: this.slug
             };
             Projects.setProjects(data).then(function (response) {
-                if (response.data) {
+                if (!response.data.err) {
                     Toastr.showToastr('success', 'Project saved correctly');
                     $timeout(function () {
                         $state.go('app.home');
                     }, 2000);
                 } else {
-                    this.disabledForm = false;
-                    Toastr.showToastr('error', 'Error when saving the project');
+                    _this.disabledForm = false;
+                    Toastr.showToastr('error', response.data.err);
                 }
             });
         }
     };
+
+    this.submit = function () {
+        //function to call on form submit
+        if (this.createprojForm.file.$valid && this.file) {
+            //check if from is valid
+            this.upload(this.file); //call upload function
+        }
+    };
+
+    this.upload = function (file) {
+        Upload.upload({
+            url: 'http://localhost:3000/api/projects/media/upload', //webAPI exposed to upload the file
+            data: { file: file //pass file as data, should be user ng-model
+            } }).then(function (response) {
+            _this.imagesUpload = [];
+            _this.videoUpload = [];
+
+            if (response.data.err) {
+                Toastr.showToastr('error', response.data.err);
+            }
+            if (response.data.media) {
+                _this.imagesUpload = [];
+                _this.videoUpload = [];
+                response.data.media.forEach(function (element) {
+                    if (element.split('-')[0] === 'image') {
+                        _this.imagesUpload.push(element.split('-')[1]);
+                    } else if (element.split('-')[0] === "video") {
+                        _this.videoUpload.push(element.split('-')[1]);
+                    }
+                });
+            }
+        });
+    };
+
+    this.deleteFile = function (file, type) {
+        file = type + "-" + file;
+        Projects.deleteFile(file).then(function (response) {
+            _this.imagesUpload = [];
+            _this.videoUpload = [];
+
+            if (response.data.err) {
+                Toastr.showToastr('error', response.data.err);
+            }
+            response.data.media.forEach(function (element) {
+                if (element.split('-')[0] === 'image') {
+                    _this.imagesUpload.push(element.split('-')[1]);
+                } else if (element.split('-')[0] === "video") {
+                    _this.videoUpload.push(element.split('-')[1]);
+                }
+            });
+        });
+    };
 };
-CreateprojCtrl.$inject = ["Projects", "Toastr", "$timeout", "$state", "User", "$uibModal", "$rootScope"];
+CreateprojCtrl.$inject = ["Projects", "Toastr", "$timeout", "$state", "User", "$uibModal", "$rootScope", "Upload"];
 
 var ModalInstanceCtrl = function ModalInstanceCtrl(Toastr, $uibModalInstance, $rootScope) {
     'ngInject';
@@ -59615,7 +62573,7 @@ ModalInstanceCtrl.$inject = ["Toastr", "$uibModalInstance", "$rootScope"];
 
 exports.default = { CreateprojCtrl: CreateprojCtrl, ModalInstanceCtrl: ModalInstanceCtrl };
 
-},{}],97:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59675,7 +62633,7 @@ DetailsProjectCtrl.$inject = ["project", "$scope", "Projects", "User", "Toastr",
 
 exports.default = DetailsProjectCtrl;
 
-},{}],98:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59729,7 +62687,7 @@ projectsModule.controller('StripeCtrl', _stripe2.default);
 
 exports.default = projectsModule;
 
-},{"./createproj.controller":96,"./detailsproj.controller":97,"./projects.config":99,"./projects.controller":100,"./stripe.controller":101,"./updateproj.controller":102,"angular":17}],99:[function(require,module,exports){
+},{"./createproj.controller":98,"./detailsproj.controller":99,"./projects.config":101,"./projects.controller":102,"./stripe.controller":103,"./updateproj.controller":104,"angular":17}],101:[function(require,module,exports){
 'use strict';
 
 ProjectsConfig.$inject = ["$stateProvider"];
@@ -59789,7 +62747,7 @@ function ProjectsConfig($stateProvider) {
 
 exports.default = ProjectsConfig;
 
-},{}],100:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59850,7 +62808,7 @@ ProjectsCtrl.$inject = ["projects", "$state", "$scope", "$stateParams", "$filter
 
 exports.default = ProjectsCtrl;
 
-},{}],101:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -59877,7 +62835,7 @@ StripeCtrl.$inject = ["User", "$state", "$scope", "Toastr", "$stateParams"];
 
 exports.default = StripeCtrl;
 
-},{}],102:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -59987,7 +62945,7 @@ UpdateprojCtrl.$inject = ["$scope", "project", "Toastr", "Projects", "$timeout",
 
 exports.default = UpdateprojCtrl;
 
-},{}],103:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60073,7 +63031,7 @@ var Adminpanel = function () {
 
 exports.default = Adminpanel;
 
-},{}],104:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60190,7 +63148,7 @@ var Articles = function () {
 
 exports.default = Articles;
 
-},{}],105:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60251,7 +63209,7 @@ var Comments = function () {
 
 exports.default = Comments;
 
-},{}],106:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60295,7 +63253,7 @@ var Contact = function () {
 
 exports.default = Contact;
 
-},{}],107:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60373,7 +63331,7 @@ servicesModule.service('Toastr', _toastr2.default);
 
 exports.default = servicesModule;
 
-},{"./adminpanel.service":103,"./articles.service":104,"./comments.service":105,"./contact.service":106,"./jwt.service":108,"./profile.service":109,"./projects.service":110,"./sectors.service":111,"./toastr.service":112,"./user.service":113,"angular":17}],108:[function(require,module,exports){
+},{"./adminpanel.service":105,"./articles.service":106,"./comments.service":107,"./contact.service":108,"./jwt.service":110,"./profile.service":111,"./projects.service":112,"./sectors.service":113,"./toastr.service":114,"./user.service":115,"angular":17}],110:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60417,7 +63375,7 @@ var JWT = function () {
 
 exports.default = JWT;
 
-},{}],109:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60496,7 +63454,7 @@ var Profile = function () {
 
 exports.default = Profile;
 
-},{}],110:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60566,6 +63524,14 @@ var Projects = function () {
                 data: token
             });
         }
+    }, {
+        key: 'deleteFile',
+        value: function deleteFile(file) {
+            return this._$http({
+                url: this._AppConstants.api + '/projects/media/delete/' + file,
+                method: 'POST'
+            });
+        }
     }]);
 
     return Projects;
@@ -60573,7 +63539,7 @@ var Projects = function () {
 
 exports.default = Projects;
 
-},{}],111:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60612,7 +63578,7 @@ var Sectors = function () {
 
 exports.default = Sectors;
 
-},{}],112:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60660,7 +63626,7 @@ var Toastr = function () {
 
 exports.default = Toastr;
 
-},{}],113:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60782,7 +63748,7 @@ var User = function () {
 
 exports.default = User;
 
-},{}],114:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60815,7 +63781,7 @@ settingsModule.controller('SettingsCtrl', _settings4.default);
 
 exports.default = settingsModule;
 
-},{"./settings.config":115,"./settings.controller":116,"angular":17}],115:[function(require,module,exports){
+},{"./settings.config":117,"./settings.controller":118,"angular":17}],117:[function(require,module,exports){
 'use strict';
 
 SettingsConfig.$inject = ["$stateProvider"];
@@ -60841,7 +63807,7 @@ function SettingsConfig($stateProvider) {
 
 exports.default = SettingsConfig;
 
-},{}],116:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -60892,4 +63858,4 @@ var SettingsCtrl = function () {
 
 exports.default = SettingsCtrl;
 
-},{}]},{},[56]);
+},{}]},{},[58]);

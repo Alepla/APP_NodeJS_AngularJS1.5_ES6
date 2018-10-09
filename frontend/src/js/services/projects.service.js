@@ -46,6 +46,13 @@ export default class Projects {
             data: token
         })
     }
+
+    deleteFile(file){
+        return this._$http({
+            url: this._AppConstants.api + '/projects/media/delete/'+ file,
+            method: 'POST'
+        })
+    }
   
   }
   

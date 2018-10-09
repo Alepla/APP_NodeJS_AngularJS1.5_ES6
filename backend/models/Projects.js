@@ -10,6 +10,7 @@ var ProjectsSchema = new mongoose.Schema({
     sector: String,
     rewards: Array,
     desc: String,
+    media: Array,
     author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     investedMoney: Number,
     inversors: Array

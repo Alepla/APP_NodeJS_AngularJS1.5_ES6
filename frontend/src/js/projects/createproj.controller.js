@@ -1,7 +1,7 @@
 class CreateprojCtrl {
-    constructor(Projects,Toastr,$timeout,$state,User,$uibModal,$rootScope) {
+    constructor(Projects,Toastr,$timeout,$state,User,$uibModal,$rootScope,Upload) {
         'ngInject';
-        
+        let _this = this;
         $rootScope.rewards = [];
         this.showSector = false;
         this.disabledForm = false;
@@ -44,7 +44,7 @@ class CreateprojCtrl {
                     slug: this.slug
                 }
                 Projects.setProjects(data).then(function(response){
-                    if(response.data){
+                    if(!response.data.err){
                         Toastr.showToastr(
                             'success',
                             'Project saved correctly'
@@ -53,14 +53,64 @@ class CreateprojCtrl {
                             $state.go('app.home');
                         }, 2000 );
                     }else{
-                        this.disabledForm = false;
+                        _this.disabledForm = false;
                         Toastr.showToastr(
                             'error',
-                            'Error when saving the project'
+                            response.data.err
                         );
                     }
                 })
             }
+        }
+
+        this.submit = function(){ //function to call on form submit
+            if (this.createprojForm.file.$valid && this.file) { //check if from is valid
+                this.upload(this.file); //call upload function
+            }
+        }
+        
+        this.upload = function (file) {
+            Upload.upload({
+                url: 'http://localhost:3000/api/projects/media/upload', //webAPI exposed to upload the file
+                data:{file:file} //pass file as data, should be user ng-model
+            }).then(function (response) {
+                _this.imagesUpload = [];
+                _this.videoUpload = [];
+
+                if(response.data.err){
+                    Toastr.showToastr('error', response.data.err);
+                }
+                if(response.data.media){
+                    _this.imagesUpload = [];
+                    _this.videoUpload = [];
+                    response.data.media.forEach(element => {
+                        if(element.split('-')[0] === 'image'){
+                            _this.imagesUpload.push(element.split('-')[1]);
+                        }else if(element.split('-')[0] === "video"){
+                            _this.videoUpload.push(element.split('-')[1]);
+                        }
+                    });
+                }
+            });
+        };
+
+        this.deleteFile = function(file,type){
+            file = type + "-" + file; 
+            Projects.deleteFile(file).then((response) => {
+                _this.imagesUpload = [];
+                _this.videoUpload = [];
+                
+                if(response.data.err){
+                    Toastr.showToastr('error', response.data.err);
+                }
+                response.data.media.forEach(element => {
+                    if(element.split('-')[0] === 'image'){
+                        _this.imagesUpload.push(element.split('-')[1]);
+                    }else if(element.split('-')[0] === "video"){
+                        _this.videoUpload.push(element.split('-')[1]);
+                    }
+                });
+            });
         }
         
     }

@@ -4,6 +4,27 @@ class ProfileCtrl {
 
     this._$scope = $scope;
     this.profile = profile;
+
+    projects.forEach((element,index) => {
+      if(element.media[0]){
+          if(element.media[0].split('-')[0] === 'image')
+              projects[index].image = element.media[0].split('-')[1];
+          else
+              projects[index].video = element.media[0].split('-')[1];
+      }
+      projects[index].resdesc = projects[index].desc.substr(0,201) + "...";
+    });
+
+    invested.forEach((element,index) => {
+      if(element.media[0]){
+          if(element.media[0].split('-')[0] === 'image')
+            invested[index].image = element.media[0].split('-')[1];
+          else
+            invested[index].video = element.media[0].split('-')[1];
+      }
+      invested[index].resdesc = invested[index].desc.substr(0,201) + "...";
+    });
+
     this.myProjects = projects;
     this.investedProj = invested;
 
@@ -11,7 +32,6 @@ class ProfileCtrl {
     this.invertedProjects = false;
 
     if (User.current) {
-      console.log(this.profile)
       this.isUser = (User.current.username === this.profile.username);
     } else {
       this.isUser = false;
@@ -30,11 +50,15 @@ class ProfileCtrl {
     this.logOut = User.logout.bind(User);
 
     this._$scope.seeProj = function() {
-      $state.go('app.detailsproject', {slug: this.invest['slug'] });
+      if(this.project){
+        $state.go('app.detailsproject', {slug: this.project['slug'] });
+      }else{
+        $state.go('app.detailsproject', {slug: this.invest['slug'] });
+      }
     }
 
     this._$scope.updateProj = function() {
-      $state.go('app.updateproj', { slug: this.invest['slug'] });
+      $state.go('app.updateproj', { slug: this.project['slug'] });
     }
   }
 }

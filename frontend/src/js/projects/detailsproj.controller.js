@@ -5,7 +5,6 @@ class DetailsProjectCtrl {
         this.rewardProj = project.rewards;
         this._$scope = $scope;
         this.noWrapSlides = false;
-        console.log(this.infoProj.media)
         let idP = this.infoProj._id
         let proj = "";
         this.slides = [];
@@ -19,7 +18,6 @@ class DetailsProjectCtrl {
                 this.slides.push({video: "http://localhost:3000/uploads/" + file,id:index})
             }
         });
-        console.log(this.slides)
  
         var handler = StripeCheckout.configure({
             key: 'pk_test_9oFbDIUtBt8iNG9M5fjhdwMP',

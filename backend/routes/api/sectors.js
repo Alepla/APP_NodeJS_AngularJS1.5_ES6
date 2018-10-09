@@ -11,4 +11,11 @@ router.get('/', function(req, res, next) {
 
 module.exports = router;
 
+/*
+Projects.aggregate().project({sector:1}).group({_id:"$sector","count":{$sum:1}}).sort({count:-1,_id:1}).exec((err,sectors) => {
+    console.log(err)
+    console.log(sectors)
+    res.json({sectors: sectors});
+  })
+*/
 //db.projects.aggregate({$project:{sector:1}},{$group:{_id:"$sector","count":{$sum:1}}},{$sort:{count:-1,_id:1}})

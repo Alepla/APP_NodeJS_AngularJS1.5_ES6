@@ -46,7 +46,7 @@
               <a class="nav-link"
                 ng-click="$ctrl.seeInvertedProjects()"
                 style="cursor: pointer;">
-                Favorited Articles
+                Participated Projects
               </a>
             </li>
  
@@ -65,15 +65,20 @@
         <div class="list-group">
           <div class="media col-md-3">
               <figure class="pull-left">
-                  <img class="media-object img-rounded img-responsive" src="http://placehold.it/350x250" alt="placehold.it/350x250" >
+                  <img ng-show="project.image" ng-src="http://localhost:3000/uploads/{{project.image}}"
+                  class="img-responsive" style="width:100%">
+                  <video ng-show="project.video" ng-src="http://localhost:3000/uploads/{{project.video}}"
+                  class="img-responsive" style="width:100%"
+                  controls>
               </figure>
           </div>
           <div class="col-md-6">
               <h4 class="list-group-item-heading"> {{project.company}} </h4>
-              <p class="list-group-item-text">{{project.desc}}</p>
+              <p class="list-group-item-text">{{project.resdesc}}</p>
           </div>
           <div class="col-md-3 text-center">
-              <button type="button" class="btn btn-primary btn-lg btn-block">See</button>
+              <button type="button" class="btn btn-primary btn-lg btn-block" id="{{project.slug}}" ng-click="seeProj()">See</button>
+              <button type="button" class="btn btn-primary btn-lg btn-block" id="{{project.slug}}" ng-click="updateProj()">Update</button>
           </div>
         </div>
       </div>
@@ -87,16 +92,19 @@
         <div class="list-group">
           <div class="media col-md-3">
               <figure class="pull-left">
-                  <img class="media-object img-rounded img-responsive" src="http://placehold.it/350x250" alt="placehold.it/350x250" >
+                  <img ng-show="invest.image" ng-src="http://localhost:3000/uploads/{{invest.image}}"
+                  class="img-responsive" style="width:100%">
+                  <video ng-show="invest.video" ng-src="http://localhost:3000/uploads/{{invest.video}}"
+                  class="img-responsive" style="width:100%"
+                  controls>
               </figure>
           </div>
           <div class="col-md-6">
               <h4 class="list-group-item-heading"> {{invest.company}} </h4>
-              <p class="list-group-item-text">{{invest.desc}}</p>
+              <p class="list-group-item-text">{{invest.resdesc}}</p>
           </div>
           <div class="col-md-3 text-center">
               <button type="button" class="btn btn-primary btn-lg btn-block" id="{{invest.slug}}" ng-click="seeProj()">See</button>
-              <button type="button" class="btn btn-primary btn-lg btn-block" id="{{invest.slug}}" ng-click="updateProj()">Update</button>
           </div>
         </div>
       </div>

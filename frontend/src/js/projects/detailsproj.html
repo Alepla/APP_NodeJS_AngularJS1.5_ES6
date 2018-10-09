@@ -12,8 +12,8 @@
             <div style="width: 100%;">
                 <div uib-carousel active="active" no-wrap="$ctrl.noWrapSlides">
                     <div uib-slide ng-repeat="slide in $ctrl.slides track by slide.id" index="slide.id" style="width: 100%">
-                        <img ng-show="{{slide.image}}" ng-src="{{slide.image}}" class="img-responsive">
-                        <video ng-show="{{slide.video}}" ng-src="{{slide.video}}" class="img-responsive" style="width:100%" controls>
+                        <img ng-show="slide.image" ng-src="{{slide.image}}" class="img-responsive">
+                        <video ng-show="slide.video" ng-src="{{slide.video}}" class="img-responsive" style="width:100%" controls>
                         <div class="carousel-caption" style="padding-bottom:100px;">
                         </div>
                     </div>

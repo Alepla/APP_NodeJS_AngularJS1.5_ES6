@@ -35,10 +35,10 @@
                 <div class="panel panel-primary">
                     <div class="panel-heading">{{project.name}}</div>
                     <div class="panel-body" style="padding:0px;">
-                        <img ng-show="{{project.image}}" ng-src="http://localhost:3000/uploads/{{project.image}}"
+                        <img ng-show="project.image" ng-src="http://localhost:3000/uploads/{{project.image}}"
                         class="img-responsive" style="width:100%" id="{{project.slug}}"
                         ng-click="openDetails()">
-                        <video ng-show="{{project.video}}" ng-src="http://localhost:3000/uploads/{{project.video}}"
+                        <video ng-show="project.video" ng-src="http://localhost:3000/uploads/{{project.video}}"
                         class="img-responsive" style="width:100%" id="{{project.slug}}"
                         controls>
                             Tu navegador no admite el elemento <code>video</code>.

@@ -9,12 +9,20 @@
             <hr>
             <p>Created at {{$ctrl.infoProj.createdAt}}</p>
             <hr>
-            <img class="img-fluid rounded" src="http://placehold.it/900x300" alt="">
+            <div style="width: 100%;">
+                <div uib-carousel active="active" no-wrap="$ctrl.noWrapSlides">
+                    <div uib-slide ng-repeat="slide in $ctrl.slides track by slide.id" index="slide.id" style="width: 100%">
+                        <img ng-show="{{slide.image}}" ng-src="{{slide.image}}" class="img-responsive">
+                        <video ng-show="{{slide.video}}" ng-src="{{slide.video}}" class="img-responsive" style="width:100%" controls>
+                        <div class="carousel-caption" style="padding-bottom:100px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--<img class="img-fluid rounded" src="http://placehold.it/900x300" alt="">-->
             <hr>
             <p class="lead">{{$ctrl.infoProj.desc}}</p>
             <blockquote class="blockquote">
-            <p class="mb-0">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-            Integer posuere erat a ante.</p>
             
             <footer class="blockquote-footer">{{$ctrl.infoProj.company}} in
             <cite title="Source Title">{{$ctrl.infoProj.name}}</cite>

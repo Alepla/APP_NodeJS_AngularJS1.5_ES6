@@ -7,6 +7,15 @@ class ProjectsCtrl {
         this.currentPage = 1;
 
         if(projects){
+            projects.forEach((element,index) => {
+                if(element.media[0]){
+                    if(element.media[0].split('-')[0] === 'image')
+                        projects[index].image = element.media[0].split('-')[1];
+                    else
+                        projects[index].video = element.media[0].split('-')[1];
+                }
+                projects[index].resdesc = projects[index].desc.substr(0,201) + "...";
+            });
             if($stateParams.filter){
                 this.showFilter = true;
                 this.filter = $stateParams.filter;

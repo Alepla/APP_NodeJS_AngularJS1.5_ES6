@@ -48,13 +48,13 @@
         <!-- Upload Image -->
         <div style="width:46%; display:inline-block; margin: 1%; text-align: left">
           <p style="text-align:left; font-weight: bold;">Preview Image</p>
-          <input required type="file" ngf-select ng-model="$ctrl.file" name="file" accept="image/*, video/*" ngf-max-size="10MB"/>
+          <input required type="file" ngf-select ng-model="$ctrl.file" name="file" accept="image/*, video/*" ngf-max-size="20MB"/>
             <img style="width:150px;" ng-show="!$ctrl.file" ngf-thumbnail="'/thumb.jpg'"/>
             <img style="width:150px;" ng-show="$ctrl.file" ngf-thumbnail="$ctrl.file" />
             <video ng-show="$ctrl.file" ngf-thumbnail="$ctrl.file" width="150px" controls></video><br />
             <i ng-show="$ctrl.createprojForm.file.$error.required && ($ctrl.createprojForm.file.$dirty || $ctrl.createprojForm.file.$touched)">*required</i><br>
             <i ng-show="$ctrl.createprojForm.file.$error.maxSize">File too large 
-            {{$ctrl.file.size / 1000000|number:1}}MB: max 10M</i>
+            {{$ctrl.file.size / 2000000|number:1}}MB: max 20M</i>
             <p style="text-align:left; font-weight: bold;">* Remember, the first file will be the main one.</p>
           <button class="btn btn-success" type="button" ng-click="$ctrl.submit()">Save image</button>
         </div>

@@ -25,6 +25,7 @@
 
         </div>
         <br>
+
         <!-- Sidebar Widgets Column -->
         <div class="col-md-4">
             <br><br><br><br><br><br><br>
@@ -43,6 +44,8 @@
                         <div class="col-lg-2">
                             {{$ctrl.infoProj.goal}}$
                         </div>
+
+                        <!--<button id="customButton">Purchase</button>-->
                     </div>
                 </div>
             </div>
@@ -52,8 +55,9 @@
                   <h4 class="card-title">{{project.title}}</h4>
                   <p class="card-text">{{project.money}},00€</p>
                   <p class="card-text">{{project.desc}}.</p>
+                  <button ng-click="pay()" id="project._id">Purchase</button>
                 </div>
-              </div>
+            </div>
         </div>
     </div>
 </div>

@@ -20,14 +20,15 @@ export default class Projects {
         return this._$http({
             url: `${this._AppConstants.api}/projects`,
             method: 'POST',
-            data:project
+            data: project
         })
     }
+
     updateProject(project){
         return this._$http({
             url: `${this._AppConstants.api}/projects`,
             method: 'PUT',
-            data:project
+            data: project
         })
     }
 
@@ -36,6 +37,14 @@ export default class Projects {
             url: this._AppConstants.api + '/projects/' + slug,
             method: 'GET',
         }).then((res) => res.data.projects);
+    }
+
+    setPay(token){
+        return this._$http({
+            url: `${this._AppConstants.api}/projects/pay`,
+            method: 'PUT',
+            data: token
+        })
     }
   
   }

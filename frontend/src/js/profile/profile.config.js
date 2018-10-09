@@ -22,6 +22,12 @@ function ProfileConfig($stateProvider) {
           (projects) => projects,
           (err) => $state.go('app.home')
         )
+      },
+      invested: function(Profile, $state, $stateParams,User) {
+        return Profile.invest(User.current.id).then(
+          (projects) => projects,
+          (err) => $state.go('app.home')
+        )
       }
     }
 

@@ -86,7 +86,6 @@ class AdminpanelCtrl {
             Adminpanel.deleteProject(slug).then(
                 (success) => {
                     Toastr.showToastr('success', 'Project deleted');
-                    //$rootScope.chargeUser = true;
                     $state.reload();
                 },
                 (err) => Toastr.showToastr('error', 'Somthing wrong was happened')

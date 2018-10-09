@@ -80,10 +80,10 @@
     </div>
   </div>
  
-  <div class="container" ng-repeat="project in $ctrl.myProjects" ng-show="$ctrl.invertedProjects">
+  <div class="container" ng-repeat="invest in $ctrl.investedProj" ng-show="$ctrl.invertedProjects">
       <div class="row">
       <div class="well">
-        <h1 class="text-center">Hola</h1>
+        <h1 class="text-center">{{invest.name}}</h1>
         <div class="list-group">
           <div class="media col-md-3">
               <figure class="pull-left">
@@ -91,11 +91,12 @@
               </figure>
           </div>
           <div class="col-md-6">
-              <h4 class="list-group-item-heading"> {{project.company}} </h4>
-              <p class="list-group-item-text">{{project.desc}}</p>
+              <h4 class="list-group-item-heading"> {{invest.company}} </h4>
+              <p class="list-group-item-text">{{invest.desc}}</p>
           </div>
           <div class="col-md-3 text-center">
-              <button type="button" class="btn btn-primary btn-lg btn-block">See</button>
+              <button type="button" class="btn btn-primary btn-lg btn-block" id="{{invest.slug}}" ng-click="seeProj()">See</button>
+              <button type="button" class="btn btn-primary btn-lg btn-block" id="{{invest.slug}}" ng-click="updateProj()">Update</button>
           </div>
         </div>
       </div>

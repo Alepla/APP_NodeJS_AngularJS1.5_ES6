@@ -33,6 +33,14 @@ router.get('/:id/projects', function(req, res, next) {
       return res.json({projects: projects});
   }).catch(next);
  });
+
+ router.get('/:id/projects/invested', function(req, res, next) {
+   //console.log(req.params);
+  Projects.find({inversors:req.params.id}).then(function(projects){
+  if(!projects){ return res.sendStatus(401); }
+      return res.json({projects: projects});
+  }).catch(next);
+ });
  
 
 router.post('/:username/follow', auth.required, function(req, res, next){

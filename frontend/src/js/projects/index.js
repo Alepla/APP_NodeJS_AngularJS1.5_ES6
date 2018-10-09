@@ -18,5 +18,8 @@ projectsModule.controller('UpdateprojCtrl', UpdateprojCtrl);
 import DetailsProjectCtrl from './detailsproj.controller';
 projectsModule.controller('DetailsProjectCtrl', DetailsProjectCtrl);
 
+import StripeCtrl from './stripe.controller';
+projectsModule.controller('StripeCtrl', StripeCtrl);
+
 
 export default projectsModule;

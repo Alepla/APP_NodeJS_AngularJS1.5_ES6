@@ -20,6 +20,13 @@ export default class Profile {
       method: 'GET'
     }).then((res) => res.data.projects);
   }
+
+  invest(id) {
+    return this._$http({
+      url: this._AppConstants.api + '/profiles/' + id + '/projects/invested',
+      method: 'GET'
+    }).then((res) => res.data.projects);
+  }
  
 
   follow(username) {

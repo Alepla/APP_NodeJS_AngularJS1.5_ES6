@@ -10,7 +10,9 @@ var ProjectsSchema = new mongoose.Schema({
     sector: String,
     rewards: Array,
     desc: String,
-    author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    investedMoney: Number,
+    inversors: Array
 }, {timestamps: true});
 
 ProjectsSchema.pre('validate', function(next){

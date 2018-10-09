@@ -1,6 +1,7 @@
 var router = require('express').Router();
 var mongoose = require('mongoose');
 var Projects = mongoose.model('Projects');
+var stripe = require("stripe")("sk_test_7W6ARqArOyH4LUymB6hmbFTr");
 
 router.get('/', function(req, res, next) {
     Projects.find().then(function(projects){
@@ -41,6 +42,27 @@ router.get('/:slug', function(req, res, next) {
     if(!projects){ return res.sendStatus(401); }
         return res.json({projects: projects});
     }).catch(next);
+});
+
+router.put('/pay', function(req, res, next) {
+    console.log(req.body);
+    var Query = { _id: req.body.idP };
+    var updateMoney = {$inc: {investedMoney: req.body.projM}, $push: {inversors: req.body.userID}};
+    Projects.update(Query, updateMoney, function(err) {
+        if(err){
+            res.send(false);
+        }else {
+            res.send(true);
+        }
+    });
+    const token = req.body.id; 
+
+    const charge = stripe.charges.create({
+        amount: req.body.projM * 100,
+        currency: 'eur',
+        description: 'CrowCode charge',
+        source: token,
+    });
 });
 
 module.exports = router;

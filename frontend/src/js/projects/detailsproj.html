@@ -42,11 +42,11 @@
                 <div class="card-body" style="padding: 30px;">
                     <div class="row">
                         <div class="col-lg-2">
-                            00$
+                            {{$ctrl.infoProj.investedMoney}}
                         </div>
                         <div class="col-lg-7">
                             <div class="progress">
-                                <progress class="progress-bar" style="width: 100%" value="500" max="{{$ctrl.infoProj.goal}}"></progress>
+                                <progress class="progress-bar" style="width: 100%" value="500" max="{{$ctrl.infoProj.investedMoney}}"></progress>
                             </div>
                         </div>
                         <div class="col-lg-2">
@@ -58,12 +58,14 @@
                 </div>
             </div>
             <h4 class="card-header">REWARDS</h4>
-            <div class="card w-50" ng-repeat="project in $ctrl.rewardProj" style="height:200px; padding:40px;">
+            <div class="card w-50" ng-repeat="project in $ctrl.rewardProj" 
+                style="height:200px; padding:40px;" ng-click="pay()" id="project._id"
+                onMouseOver="this.style.border='solid 1px #FFD8D8'; this.style.background='#F0F0F0'" 
+                onMouseOut="this.style.border='none'; this.style.background='#fff'">
                 <div class="card-body">
                   <h4 class="card-title">{{project.title}}</h4>
                   <p class="card-text">{{project.money}},00€</p>
                   <p class="card-text">{{project.desc}}.</p>
-                  <button ng-click="pay()" id="project._id">Purchase</button>
                 </div>
             </div>
         </div>

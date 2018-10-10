@@ -60,19 +60,24 @@ router.put('/pay', function(req, res, next) {
     var Query = { _id: req.body.idP };
     var updateMoney = {$inc: {investedMoney: req.body.projM}, $push: {inversors: req.body.userID}};
     Projects.update(Query, updateMoney, function(err) {
-        if(err){
-            res.send(false);
-        }else {
-            res.send(true);
-        }
-    });
-    const token = req.body.id; 
+        if(!err){
+            const token = req.body.id; 
 
-    const charge = stripe.charges.create({
-        amount: req.body.projM * 100,
-        currency: 'eur',
-        description: 'CrowCode charge',
-        source: token,
+            const charge = stripe.charges.create({
+                amount: req.body.projM * 100,
+                currency: 'eur',
+                description: 'CrowCode charge',
+                source: token,
+            }, function(err){
+                if(err) {
+                    res.send(false);
+                }else {
+                    res.send(true);
+                }
+            });
+        }else {
+            res.send(false);
+        }
     });
 });
 

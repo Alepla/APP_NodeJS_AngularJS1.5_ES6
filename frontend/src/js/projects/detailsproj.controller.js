@@ -1,5 +1,5 @@
 class DetailsProjectCtrl {
-    constructor(project, $scope, Projects, User, Toastr, $state) {
+    constructor(project, $scope, Projects, User, Toastr, $state, $timeout) {
         'ngInject';
         this.infoProj = project;
         this.rewardProj = project.rewards;
@@ -27,27 +27,42 @@ class DetailsProjectCtrl {
                 token.idP = idP;
                 token.projM = proj.money;
                 token.userID = User.current.id;
-                Projects.setPay(token);
+                Projects.setPay(token).then(function(response){
+                    if(!response.data.err){
+                        Toastr.showToastr(
+                            'success',
+                            'Congratulations for youre invest!'
+                        );
+                        $timeout( function(){
+                            $state.go('app.home');
+                        }, 2000 );
+                    }else{
+                        Toastr.showToastr(
+                            'error',
+                            'Something wrong was happened try latter'
+                        );
+                    }
+                });
             }
           });
 
         this._$scope.pay = function(){
             if(User.current){
-            let id = this.project['_id'];
-            proj = project.rewards.find(function(x) {
-                if(x._id == id){
-                    return x._id;
-                }
-            });
+                let id = this.project['_id'];
+                proj = project.rewards.find(function(x) {
+                    if(x._id == id){
+                        return x._id;
+                    }
+                });
 
-            handler.open({
-                name: project.name,
-                description: project.company,
-                currency: 'eur',
-                amount: proj.money * 100
-            });
+                handler.open({
+                    name: project.name,
+                    description: project.company,
+                    currency: 'eur',
+                    amount: proj.money * 100
+                });
             }else {
-            $state.go('app.login');
+                $state.go('app.login');
             }
 
         }

@@ -26,8 +26,8 @@
  <div class="container">
      <div class="row" infinite-scroll="load()" infinite-scroll-distance='0' infinite-scroll-immediate-check='false'>
          <div class="col-sm-4" ng-repeat="sector in infoSect">
-             <div class="panel panel-primary">
-                 <div class="panel-heading">{{sector}}</div>
+             <div class="panel panel-info">
+                 <!--<div class="panel-heading">{{sector}}</div>-->
                     <img ng-src="/images/{{sector}}.svg"
                     class="img-responsive" style="width:100%"
                     ui-sref="app.projects({filter:sector})" />

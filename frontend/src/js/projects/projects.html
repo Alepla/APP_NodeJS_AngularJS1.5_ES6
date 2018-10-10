@@ -32,7 +32,7 @@
     <div class="container">
         <div class="row">
             <div class="col-sm-4" ng-repeat="project in $ctrl.infoProj | filter:$ctrl.search:strict | limitTo:$ctrl.itemsPerPage" ng-click="openDetails()">
-                <div class="panel panel-primary">
+                <div class="panel panel-default">
                     <div class="panel-heading">{{project.name}}</div>
                     <div class="panel-body" style="padding:0px;">
                         <img ng-show="project.image" ng-src="http://localhost:3000/uploads/{{project.image}}"

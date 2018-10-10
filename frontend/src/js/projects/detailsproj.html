@@ -42,11 +42,11 @@
                 <div class="card-body" style="padding: 30px;">
                     <div class="row">
                         <div class="col-lg-2">
-                            {{$ctrl.infoProj.investedMoney}}
+                            {{$ctrl.infoProj.investedMoney}}$
                         </div>
                         <div class="col-lg-7">
                             <div class="progress">
-                                <progress class="progress-bar" style="width: 100%" value="500" max="{{$ctrl.infoProj.investedMoney}}"></progress>
+                                <progress class="progress-bar" style="width: 100%" value="{{$ctrl.infoProj.investedMoney}}" max="{{$ctrl.infoProj.goal}}"></progress>
                             </div>
                         </div>
                         <div class="col-lg-2">

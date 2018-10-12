@@ -7,7 +7,9 @@
                 by <a href="#">{{$ctrl.infoProj.company}}</a>
             </p>
             <hr>
-            <p>Created at {{$ctrl.infoProj.createdAt}}</p>
+            <!-- <p>Created at {{$ctrl.infoProj.createdAt}}</p> -->
+            <h4 ng-show="$ctrl.totalDays">{{$ctrl.totalDays}} days left to finish the project</h4>
+            <h4 ng-show="$ctrl.finProject">The project has been finished</h4>
             <hr>
             <div style="width: 100%;">
                 <div uib-carousel active="active" no-wrap="$ctrl.noWrapSlides">
@@ -38,15 +40,16 @@
         <div class="col-md-4">
             <br><br><br><br><br><br><br>
             <div class="card my-4">
-                <h4 class="card-header">MONEY GOAL</h4>
+                <h4 class="card-header">MONEY GOAL <span ng-show="$ctrl.infoProj.investedMoney >= $ctrl.infoProj.goal"> Completed</span></h4>
                 <div class="card-body" style="padding: 30px;">
                     <div class="row">
                         <div class="col-lg-2">
-                            {{$ctrl.infoProj.investedMoney}}$
+                            <span ng-show="!$ctrl.infoProj.investedMoney">0$</span>
+                            <span ng-show="$ctrl.infoProj.investedMoney">{{$ctrl.infoProj.investedMoney}}$</span> 
                         </div>
                         <div class="col-lg-7">
                             <div class="progress">
-                                <progress class="progress-bar" style="width: 100%" value="{{$ctrl.infoProj.investedMoney}}" max="{{$ctrl.infoProj.goal}}"></progress>
+                                <progress class="progress-bar" style="width: 100%; background-color:#fff;  border: solid 1px #0064b4;" value="{{$ctrl.infoProj.investedMoney}}" max="{{$ctrl.infoProj.goal}}"></progress>
                             </div>
                         </div>
                         <div class="col-lg-2">
@@ -58,8 +61,18 @@
                 </div>
             </div>
             <h4 class="card-header">REWARDS</h4>
-            <div class="card w-50" ng-repeat="project in $ctrl.rewardProj" 
+            <div ng-show="$ctrl.totalDays" class="card w-50" ng-repeat="project in $ctrl.rewardProj" 
                 style="height:200px; padding:40px;" ng-click="pay()" id="project._id"
+                onMouseOver="this.style.border='solid 1px #FFD8D8'; this.style.background='#F0F0F0'" 
+                onMouseOut="this.style.border='none'; this.style.background='#fff'">
+                <div class="card-body">
+                  <h4 class="card-title">{{project.title}}</h4>
+                  <p class="card-text">{{project.money}},00€</p>
+                  <p class="card-text">{{project.desc}}.</p>
+                </div>
+            </div>
+            <div ng-show="$ctrl.finProject" class="card w-50" ng-repeat="project in $ctrl.rewardProj" 
+                style="height:200px; padding:40px;" ng-click="$ctrl.disabledPay()" id="project._id"
                 onMouseOver="this.style.border='solid 1px #FFD8D8'; this.style.background='#F0F0F0'" 
                 onMouseOut="this.style.border='none'; this.style.background='#fff'">
                 <div class="card-body">

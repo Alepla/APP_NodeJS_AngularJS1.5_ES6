@@ -2,6 +2,15 @@ class DetailsProjectCtrl {
     constructor(project, $scope, Projects, User, Toastr, $state, $timeout) {
         'ngInject';
         this.infoProj = project;
+        let leftDays = Math.round((new Date() - new Date(project.createdAt) ) / (1000*60*60*24))
+        console.log(Math.round((new Date() - new Date(project.createdAt) ) / (1000*60*60*24)));
+        if(leftDays > 45 ){
+            this.finProject = true;
+            this.totalDays = false;
+        }else{
+            this.finProject = false;
+            this.totalDays = 45 - leftDays;
+        }
         this.rewardProj = project.rewards;
         this._$scope = $scope;
         this.noWrapSlides = false;
@@ -65,6 +74,12 @@ class DetailsProjectCtrl {
                 $state.go('app.login');
             }
 
+        }
+        this.disabledPay = () => {
+            Toastr.showToastr(
+                'error',
+                'The project has been finished'
+            );
         }
 
         window.addEventListener('popstate', function() {

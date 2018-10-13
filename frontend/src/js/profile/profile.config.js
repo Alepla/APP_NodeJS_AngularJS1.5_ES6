@@ -28,6 +28,12 @@ function ProfileConfig($stateProvider) {
           (projects) => projects,
           (err) => $state.go('app.home')
         )
+      },
+      subscribe: function(Profile, $state, $stateParams,User) {
+        return Profile.subscribe(User.current.id).then(
+          (projects) => projects,
+          (err) => $state.go('app.home')
+        )
       }
     }
 

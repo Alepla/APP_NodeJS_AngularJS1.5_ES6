@@ -13,6 +13,8 @@ var ProjectsSchema = new mongoose.Schema({
     media: Array,
     author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     investedMoney: Number,
+    type:String,
+    subscribers:Array,
     inversors: Array
 }, {timestamps: true});
 

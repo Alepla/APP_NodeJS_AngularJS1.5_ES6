@@ -2,8 +2,7 @@ class DetailsProjectCtrl {
     constructor(project, $scope, Projects, User, Toastr, $state, $timeout) {
         'ngInject';
         this.infoProj = project;
-        let leftDays = Math.round((new Date() - new Date(project.createdAt) ) / (1000*60*60*24))
-        console.log(Math.round((new Date() - new Date(project.createdAt) ) / (1000*60*60*24)));
+        let leftDays = Math.round((new Date() - new Date(project.createdAt) ) / (1000*60*60*24));
         if(leftDays > 45 ){
             this.finProject = true;
             this.totalDays = false;
@@ -36,6 +35,7 @@ class DetailsProjectCtrl {
                 token.idP = idP;
                 token.projM = proj.money;
                 token.userID = User.current.id;
+                token.projType = project.type;
                 Projects.setPay(token).then(function(response){
                     if(!response.data.err){
                         Toastr.showToastr(

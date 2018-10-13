@@ -9,7 +9,31 @@
       </div>
   </div>
 </div>
+
 <div style="margin-top: 75px; text-align: center; margin: 5%; ">
+    <div class="articles-toggle">
+      <ul class="nav nav-pills outline-active">
+
+        <li class="nav-item">
+          <a class="nav-link"
+            ng-click="$ctrl.normalProj()"
+            style="cursor: pointer;">
+            Normal Project
+            <hr ng-show="$ctrl.projectType === 'normal'" style=" border-top: 2px solid #ababab; margin:0px;"/>
+          </a>
+        </li>
+        
+        <li class="nav-item">
+          <a class="nav-link"
+            ng-click="$ctrl.monthlyProj()"
+            style="cursor: pointer;">
+            Monthly Project
+            <hr ng-show="$ctrl.projectType === 'monthly'" style=" border-top: 2px solid #ababab; margin:0px;"/>
+          </a>
+        </li>
+
+      </ul>
+    </div>
     <div class="well well-sm">
       <form class="form-horizontal" id="createprojForm" name="$ctrl.createprojForm" ng-disabled="$ctrl.disabledForm">
       <fieldset>

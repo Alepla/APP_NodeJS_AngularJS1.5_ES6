@@ -42,6 +42,13 @@ router.get('/:id/projects', function(req, res, next) {
   }).catch(next);
  });
  
+ router.get('/:id/projects/subscribe', function(req, res, next) {
+  //console.log(req.params);
+ Projects.find({"subscribers.user":req.params.id}).then(function(projects){
+ if(!projects){ return res.sendStatus(401); }
+     return res.json({projects: projects});
+ }).catch(next);
+});
 
 router.post('/:username/follow', auth.required, function(req, res, next){
   var profileId = req.profile._id;

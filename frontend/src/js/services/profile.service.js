@@ -28,6 +28,12 @@ export default class Profile {
     }).then((res) => res.data.projects);
   }
  
+  subscribe(id) {
+    return this._$http({
+      url: this._AppConstants.api + '/profiles/' + id + '/projects/subscribe',
+      method: 'GET'
+    }).then((res) => res.data.projects);
+  }
 
   follow(username) {
     return this._$http({

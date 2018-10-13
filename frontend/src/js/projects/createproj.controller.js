@@ -5,6 +5,7 @@ class CreateprojCtrl {
         $rootScope.rewards = [];
         this.showSector = false;
         this.disabledForm = false;
+        this.projectType = "normal";
         this.selectSector = ["Web app","Mobile app","Desktop app","Videogames","Artificial intelligence","Operative system","Arduino project"];
         $rootScope.missingNumber = 3 - $rootScope.rewards.length;
         this.nvalidCreateP = function(){
@@ -23,6 +24,14 @@ class CreateprojCtrl {
             });
         }
         
+        this.normalProj = function(){
+            this.projectType = "normal";
+        }
+
+        this.monthlyProj = function(){
+            this.projectType = "monthly";
+        }
+
         this.messageCreateP = function(){
             if($rootScope.rewards.length < 3){
                 Toastr.showToastr(
@@ -41,6 +50,7 @@ class CreateprojCtrl {
                     rewards: $rootScope.rewards,
                     desc: this.createproj.inputDesc,
                     author: User.current.id,
+                    type: this.projectType,
                     slug: this.slug
                 }
                 Projects.setProjects(data).then(function(response){

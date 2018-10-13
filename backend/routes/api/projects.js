@@ -17,7 +17,7 @@ router.post('/', function(req, res, next) {
     if(mediaUpload.length < 1){
         res.json({err:"Need upload 1 file"});
     }else{
-        Projects.create({name:req.body.name,company:req.body.company,goal:req.body.goal,sector:req.body.sector,rewards:req.body.rewards,desc:req.body.desc,media:mediaUpload,author:req.body.author, investedMoney: 0},
+        Projects.create({name:req.body.name,company:req.body.company,goal:req.body.goal,sector:req.body.sector,rewards:req.body.rewards,desc:req.body.desc,media:mediaUpload,author:req.body.author, investedMoney: 0,type:req.body.type},
             function(err, project){
                 console.log(err)
                 if(err){
@@ -58,7 +58,11 @@ router.get('/:slug', function(req, res, next) {
 router.put('/pay', function(req, res, next) {
     console.log(req.body);
     var Query = { _id: req.body.idP };
-    var updateMoney = {$inc: {investedMoney: req.body.projM}, $push: {inversors: req.body.userID}};
+    if(req.body.projType === "normal"){
+        var updateMoney = {$inc: {investedMoney: req.body.projM}, $push: {inversors: req.body.userID}};
+    }else if(req.body.projType === "monthly"){
+        var updateMoney = {$inc: {investedMoney: req.body.projM}, $push: {subscribers: {user:req.body.userID,money:req.body.projM}}};
+    }
     Projects.update(Query, updateMoney, function(err) {
         if(!err){
             const token = req.body.id; 

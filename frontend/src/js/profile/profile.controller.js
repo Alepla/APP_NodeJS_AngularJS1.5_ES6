@@ -1,9 +1,10 @@
 class ProfileCtrl {
-  constructor(profile, User, projects, invested, $scope, $state) {
+  constructor(profile, User, projects, invested, $scope, $state,subscribe) {
     'ngInject';
 
     this._$scope = $scope;
     this.profile = profile;
+    console.log(subscribe)
 
     projects.forEach((element,index) => {
       if(element.media[0]){
@@ -25,8 +26,19 @@ class ProfileCtrl {
       invested[index].resdesc = invested[index].desc.substr(0,201) + "...";
     });
 
+    subscribe.forEach((element,index) => {
+      if(element.media[0]){
+          if(element.media[0].split('-')[0] === 'image')
+          subscribe[index].image = element.media[0].split('-')[1];
+          else
+          subscribe[index].video = element.media[0].split('-')[1];
+      }
+      subscribe[index].resdesc = subscribe[index].desc.substr(0,201) + "...";
+    });
+
     this.myProjects = projects;
     this.investedProj = invested;
+    this.subscribeProj = subscribe;
 
     this.personalProjects = true;
     this.invertedProjects = false;
@@ -39,12 +51,14 @@ class ProfileCtrl {
 
     this.seePersonalProjects = function() {
       this.invertedProjects = false;
+      this.subscribeProjects = false;
       this.personalProjects = true;
     }
  
     this.seeInvertedProjects = function() {
       this.invertedProjects = true;
       this.personalProjects = false;
+      this.subscribeProjects = false;
     }
 
     this.logOut = User.logout.bind(User);
@@ -52,8 +66,10 @@ class ProfileCtrl {
     this._$scope.seeProj = function() {
       if(this.project){
         $state.go('app.detailsproject', {slug: this.project['slug'] });
+      }else if(this.invest){
+          $state.go('app.detailsproject', {slug: this.invest['slug'] });
       }else{
-        $state.go('app.detailsproject', {slug: this.invest['slug'] });
+        $state.go('app.detailsproject', {slug: this.subscribe['slug'] });
       }
     }
 

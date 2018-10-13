@@ -45,7 +45,12 @@
                           </video>
                     </div>
                     <div class="panel-footer">{{project.resdesc}}<br></div>
-                    <div class="panel-footer">{{project.investedMoney}}<span ng-show="!project.investedMoney">0</span> de {{project.goal}} <span ng-show="project.investedMoney >= project.goal"> Completed</span></div>
+                    <div class="panel-footer">
+                        {{project.investedMoney}}<span ng-show="!project.investedMoney">0</span> de {{project.goal}} 
+                        <span ng-show="project.investedMoney >= project.goal"> - Completed</span> -
+                        <span ng-show="project.finProject && (!project.investedMoney || project.investedMoney < project.goal)"> The project has been a fail</span>
+                        <span ng-show="project.totalDays"> {{project.totalDays}} days left</span>
+                    </div>
                 </div><br>
             </div><br>
         </div>

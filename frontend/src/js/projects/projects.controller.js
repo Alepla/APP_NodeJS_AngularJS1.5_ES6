@@ -5,6 +5,7 @@ class ProjectsCtrl {
         this._$scope = $scope;
         this.itemsPerPage = 3;
         this.currentPage = 1;
+        let leftDays;
 
         if(projects){
             projects.forEach((element,index) => {
@@ -15,6 +16,12 @@ class ProjectsCtrl {
                         projects[index].video = element.media[0].split('-')[1];
                 }
                 projects[index].resdesc = projects[index].desc.substr(0,201) + "...";
+                leftDays = Math.round((new Date() - new Date(element.createdAt) ) / (1000*60*60*24));
+                if(leftDays > 45 ){
+                    projects[index].finProject = true;
+                }else{
+                    projects[index].totalDays = 45 - leftDays;
+                }
             });
             if($stateParams.filter){
                 this.showFilter = true;

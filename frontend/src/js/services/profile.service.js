@@ -35,6 +35,14 @@ export default class Profile {
     }).then((res) => res.data.projects);
   }
 
+  unsubscribe(info) {
+    return this._$http({
+      url: this._AppConstants.api + '/profiles/projects/unsubscribe',
+      method: 'PUT',
+      data: info
+    })
+  }
+
   follow(username) {
     return this._$http({
       url: this._AppConstants.api + '/profiles/' + username + '/follow',

@@ -50,6 +50,14 @@ router.get('/:id/projects', function(req, res, next) {
  }).catch(next);
 });
 
+router.put('/projects/unsubscribe', function(req, res, next) {
+  console.log(req.body)
+ Projects.update({"slug" : req.body.project},{$pull:{"subscribers":{user:req.body.user}}}).then(function(response){
+    if(!response){ return res.sendStatus(401); }
+    return res.json({res: true});
+ }).catch(next);
+});
+
 router.post('/:username/follow', auth.required, function(req, res, next){
   var profileId = req.profile._id;
 

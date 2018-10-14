@@ -1,10 +1,9 @@
 class ProfileCtrl {
-  constructor(profile, User, projects, invested, $scope, $state,subscribe) {
+  constructor(profile, User, projects, invested, $scope, $state,subscribe,Profile,Toastr,$timeout) {
     'ngInject';
 
     this._$scope = $scope;
     this.profile = profile;
-    console.log(subscribe)
 
     projects.forEach((element,index) => {
       if(element.media[0]){
@@ -75,6 +74,26 @@ class ProfileCtrl {
 
     this._$scope.updateProj = function() {
       $state.go('app.updateproj', { slug: this.project['slug'] });
+    }
+
+    this._$scope.unsuscribeProj = function(){
+      let info = {project:this.subscribe['slug'],user:User.current.id};
+      Profile.unsubscribe(info).then((response) => {
+        if(response.data.res){
+          Toastr.showToastr(
+            'success',
+            'Correctly unsuscribe'
+          );
+          $timeout( function(){
+            $state.go('app.home');
+          }, 1000 );
+        }else{
+          Toastr.showToastr(
+            'error',
+            'Error'
+          );
+        }
+      });
     }
   }
 }

@@ -60,9 +60,12 @@
                     </div>
                 </div>
             </div>
-            <h4 class="card-header">REWARDS</h4>
-            <div ng-show="$ctrl.totalDays" class="card w-50" ng-repeat="project in $ctrl.rewardProj" 
-                style="height:200px; padding:40px;" ng-click="pay()" id="project._id"
+            <h4 class="card-header"><span ng-click="$ctrl.showRewards = true; $ctrl.showAids = false;">Rewards</span>   -   <span ng-click="$ctrl.showAids = true; $ctrl.showRewards = false;">Aids</span></h4>
+            
+            <h4 class="card-header" ng-show="$ctrl.showRewards">REWARDS</h4>
+            <h4 class="card-header" ng-show="$ctrl.showAids">AIDS</h4>
+            <div ng-show="$ctrl.totalDays && $ctrl.showRewards" class="card w-50" ng-repeat="project in $ctrl.rewardProj" 
+                style="padding:40px;" ng-click="pay()" id="project._id"
                 onMouseOver="this.style.border='solid 1px #FFD8D8'; this.style.background='#F0F0F0'" 
                 onMouseOut="this.style.border='none'; this.style.background='#fff'">
                 <div class="card-body">
@@ -71,14 +74,14 @@
                   <p class="card-text">{{project.desc}}.</p>
                 </div>
             </div>
-            <div ng-show="$ctrl.finProject" class="card w-50" ng-repeat="project in $ctrl.rewardProj" 
-                style="height:200px; padding:40px;" ng-click="$ctrl.disabledPay()" id="project._id"
+            <div ng-show="$ctrl.showAids" class="card w-50" ng-repeat="aids in $ctrl.aidsProj" 
+                style="padding:40px;" id="project._id"
                 onMouseOver="this.style.border='solid 1px #FFD8D8'; this.style.background='#F0F0F0'" 
                 onMouseOut="this.style.border='none'; this.style.background='#fff'">
                 <div class="card-body">
-                  <h4 class="card-title">{{project.title}}</h4>
-                  <p class="card-text">{{project.money}},00€</p>
-                  <p class="card-text">{{project.desc}}.</p>
+                  <h4 class="card-title">{{aids.title}}</h4>
+                  <p class="card-text">{{aids.percentage}} %</p>
+                  <p class="card-text">{{aids.desc}}.</p>
                 </div>
             </div>
         </div>

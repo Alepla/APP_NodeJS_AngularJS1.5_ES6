@@ -11,8 +11,11 @@ class DetailsProjectCtrl {
             this.totalDays = 45 - leftDays;
         }
         this.rewardProj = project.rewards;
+        this.aidsProj = project.aids;
         this._$scope = $scope;
         this.noWrapSlides = false;
+        this.showRewards = true; 
+        this.showAids = false;
         let idP = this.infoProj._id
         let proj = "";
         this.slides = [];

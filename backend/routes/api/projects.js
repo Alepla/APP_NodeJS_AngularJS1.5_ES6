@@ -17,7 +17,7 @@ router.post('/', function(req, res, next) {
     if(mediaUpload.length < 1){
         res.json({err:"Need upload 1 file"});
     }else{
-        Projects.create({name:req.body.name,company:req.body.company,goal:req.body.goal,sector:req.body.sector,rewards:req.body.rewards,desc:req.body.desc,media:mediaUpload,author:req.body.author, investedMoney: 0,type:req.body.type},
+        Projects.create({name:req.body.name,company:req.body.company,goal:req.body.goal,sector:req.body.sector,rewards:req.body.rewards,aids:req.body.aids,desc:req.body.desc,media:mediaUpload,author:req.body.author, investedMoney: 0,type:req.body.type},
             function(err, project){
                 console.log(err)
                 if(err){

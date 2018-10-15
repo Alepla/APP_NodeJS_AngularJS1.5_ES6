@@ -3,6 +3,7 @@ class CreateprojCtrl {
         'ngInject';
         let _this = this;
         $rootScope.rewards = [];
+        this.infoAids = [];
         this.showSector = false;
         this.disabledForm = false;
         this.projectType = "normal";
@@ -24,12 +25,12 @@ class CreateprojCtrl {
             });
         }
         
-        this.normalProj = function(){
-            this.projectType = "normal";
-        }
-
-        this.monthlyProj = function(){
-            this.projectType = "monthly";
+        this.saveAids = function(){
+            this.infoAids.push({_id:Math.round(Math.random() * 1000000) * Math.round(Math.random() * 1000000),title:this.aids.inputTitle,percentage:this.aids.inputPercentage,desc:this.aids.inputDesc})
+            this.aids.inputTitle = "";
+            this.aids.inputPercentage = "";
+            this.aids.inputDesc = "";
+            this.showAdvancedSet = false;
         }
 
         this.messageCreateP = function(){
@@ -40,6 +41,8 @@ class CreateprojCtrl {
                 );
             }else{
                 this.disabledForm = true;
+                if(this.infoAids.length < 1) this.infoAids = false;
+                console.log(this.infoAids);
                 this.slug = this.createproj.inputNameproj.toLowerCase();
                 this.slug = this.slug.replace(" ","-");
                 var data = {
@@ -51,7 +54,8 @@ class CreateprojCtrl {
                     desc: this.createproj.inputDesc,
                     author: User.current.id,
                     type: this.projectType,
-                    slug: this.slug
+                    slug: this.slug,
+                    aids: this.infoAids
                 }
                 Projects.setProjects(data).then(function(response){
                     if(!response.data.err){

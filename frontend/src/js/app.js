@@ -22,7 +22,6 @@ import './profile';
 import './article';
 import './services';
 import './auth';
-import './settings';
 import './editor';
 import './contact';
 import './projects';
@@ -42,7 +41,6 @@ const requires = [
   'app.article',
   'app.services',
   'app.auth',
-  'app.settings',
   'app.editor',
   'app.contact',
   'app.projects',

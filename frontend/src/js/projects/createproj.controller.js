@@ -26,7 +26,7 @@ class CreateprojCtrl {
         }
         
         this.saveAids = function(){
-            this.infoAids.push({_id:Math.round(Math.random() * 1000000) * Math.round(Math.random() * 1000000),title:this.aids.inputTitle,percentage:this.aids.inputPercentage,desc:this.aids.inputDesc})
+            this.infoAids.push({_id:Math.round(Math.random() * 1000000) * Math.round(Math.random() * 1000000),title:this.aids.inputTitle,percentage:this.aids.inputPercentage,desc:this.aids.inputDesc,state:0})
             this.aids.inputTitle = "";
             this.aids.inputPercentage = "";
             this.aids.inputDesc = "";

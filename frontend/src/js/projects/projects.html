@@ -33,7 +33,7 @@
         <div class="row">
             <div class="col-sm-4" ng-repeat="project in $ctrl.infoProj | filter:$ctrl.search:strict | limitTo:$ctrl.itemsPerPage" ng-click="openDetails()">
                 <div class="panel panel-default">
-                    <div class="panel-heading">{{project.name}}</div>
+                    <div class="panel-heading">{{project.name}}<span ng-show="project.type === 'monthly'"> - Monthly</span></div>
                     <div class="panel-body" style="padding:0px;">
                         <img ng-show="project.image" ng-src="http://localhost:3000/uploads/{{project.image}}"
                         class="img-responsive" style="width:100%" id="{{project.slug}}"
@@ -60,8 +60,3 @@
         items-per-page="$ctrl.itemsPerPage" ng-change="$ctrl.changePage()">
         </ul></center>
 </div>
-<!--<img style="width: 100%;" ng-src="http://localhost:3000/uploads/{{image}}" />
-<video width="100%" ng-src="http://localhost:3000/uploads/{{video}}"controls>
-              Tu navegador no admite el elemento <code>video</code>.
-            </video>
--->

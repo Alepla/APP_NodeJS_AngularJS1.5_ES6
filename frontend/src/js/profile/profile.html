@@ -9,12 +9,6 @@
           <img ng-src="{{::$ctrl.profile.image}}" class="user-img" />
           <h4 ng-bind="::$ctrl.profile.username"></h4>
           <p ng-bind="::$ctrl.profile.bio"></p>
- 
-          <a ui-sref="app.settings"
-            class="btn btn-sm btn-outline-secondary action-btn"
-            ng-show="$ctrl.isUser">
-            <i class="ion-gear-a"></i> Edit Profile Settings
-          </a>
           
           <button class="btn btn-sm btn-outline-secondary action-btn" ng-click="$ctrl.logOut()" style="margin-left:2%;">Log out</button>
           <follow-btn user="$ctrl.profile" ng-hide="$ctrl.isUser"></follow-btn>
@@ -65,6 +59,8 @@
     <!-- End row & container divs -->
     </div>
   </div>
+
+  <span ng-show="$ctrl.myProjects.length < 1 && $ctrl.personalProjects"><br /><br /><span class="alert alert-info" style="margin-left:20%;">You haven't created a project</span></span>
   <div class="container" ng-repeat="project in $ctrl.myProjects" ng-show="$ctrl.personalProjects">
       <div class="row">
       <div class="well">
@@ -91,7 +87,8 @@
       </div>
     </div>
   </div>
- 
+  
+  <span ng-show="$ctrl.investedProj.length < 1 && $ctrl.invertedProjects"><br /><br /><span class="alert alert-info" style="margin-left:20%;">You have not participated in any project</span></span>
   <div class="container" ng-repeat="invest in $ctrl.investedProj" ng-show="$ctrl.invertedProjects">
       <div class="row">
       <div class="well">
@@ -117,7 +114,8 @@
       </div>
     </div>
   </div>
- 
+  
+  <span ng-show="$ctrl.subscribeProj.length < 1 && $ctrl.subscribeProjects"><br /><br /><span style="margin-left:20%;"" class="alert alert-info">You're not subscribed to any project.</span></span>
   <div class="container" ng-repeat="subscribe in $ctrl.subscribeProj" ng-show="$ctrl.subscribeProjects">
     <div class="row">
     <div class="well">

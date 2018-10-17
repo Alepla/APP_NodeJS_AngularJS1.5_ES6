@@ -28,9 +28,9 @@
          <div class="col-sm-4" ng-repeat="sector in infoSect">
              <div class="panel panel-info">
                  <!--<div class="panel-heading">{{sector}}</div>-->
-                    <img ng-src="/images/{{sector}}.svg"
+                    <img ng-src="/images/{{sector.sector}}.svg"
                     class="img-responsive" style="width:100%"
-                    ui-sref="app.projects({filter:sector})" />
+                    ui-sref="app.projects({filter:sector.sector})" />
              </div><br>
           </div><br>
      </div>

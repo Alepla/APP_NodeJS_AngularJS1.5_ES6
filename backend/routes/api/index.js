@@ -7,6 +7,7 @@ router.use('/sectors', require('./sectors'));
 router.use('/contact', require('./contact'));
 router.use('/projects', require('./projects'));
 router.use('/adminpanel', require('./adminpanel'));
+router.use('/graphql', require('./graphql'));
 
 
 router.use(function(err, req, res, next){

@@ -1,0 +1,8 @@
+{
+    "presets": [
+        "env"
+    ],
+    "plugins": [
+        "inline-import-graphql-ast"
+    ]
+}

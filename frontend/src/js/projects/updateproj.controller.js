@@ -9,7 +9,7 @@ class UpdateprojCtrl {
         this.selectSector = ["Web app","Mobile app","Desktop app","Videogames"];
         this.infoProj = project;
         this.rewards = project.rewards;
-        console.log(project);
+        //console.log(project);
 
         this.AddNew = function() {
             this.showButtonCancel = true;
@@ -88,7 +88,7 @@ class UpdateprojCtrl {
                     desc: this.infoProj.desc,
                     oldID: this.infoProj._id
                 }
-                console.log(data);
+                //console.log(data);
                 Projects.updateProject(data).then(function(response){
                     if(response.data){
                         Toastr.showToastr(

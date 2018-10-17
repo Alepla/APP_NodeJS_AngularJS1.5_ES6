@@ -28,7 +28,7 @@ class AuthCtrl {
 						}
 					}
 				)
-				console.log(this.authForm.username + " " + this.authForm.email + " " + this.authForm.password + " " + this.authForm.rpassword)
+				//console.log(this.authForm.username + " " + this.authForm.email + " " + this.authForm.password + " " + this.authForm.rpassword)
 			}else if(this.authType === 'login'){
 				User.attemptAuth(this.authType,this.authForm).then(
 					(res) => {

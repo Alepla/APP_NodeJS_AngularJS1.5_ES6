@@ -1,9 +1,13 @@
 class AdminpanelCtrl {
-    constructor($rootScope, $scope, projects, $state, users, Adminpanel, Toastr, $uibModal) {
+    constructor($rootScope, $scope, projects, $state, users, Adminpanel, Toastr, $uibModal, User) {
         'ngInject';
         this._$scope = $scope;
         this.infoProject = projects;
         this.infoUsers = users;
+
+        if(User.current.type != "admin"){
+            $state.go('app.home');
+        }
 
         if($rootScope.chargeUser){
             $rootScope.chargeUser = false;
@@ -59,7 +63,8 @@ class AdminpanelCtrl {
         this.changePageUser = function(){
             var begin = (this.currentPageUser - 1) * this.itemsPerPageUser;
             var end = begin + this.itemsPerPageUser;
-            this.infoUsers = this.sdataUser.slice(begin, end);            this.showUseres = true;
+            this.infoUsers = this.sdataUser.slice(begin, end);            
+            this.showUseres = true;
             this.showProjects = false;
         }
 

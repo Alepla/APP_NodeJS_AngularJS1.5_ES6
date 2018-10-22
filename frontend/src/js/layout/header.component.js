@@ -7,6 +7,11 @@ class AppHeaderCtrl {
 
     $scope.$watch('User.current', (newUser) => {
       this.currentUser = newUser;
+      if(this.currentUser != null) {
+        if(this.currentUser.type == "admin"){
+          $scope.adminPanel = '<a class="nav-link" href="http://localhost:4000/#!/adminpanel"> Admin Panel</a>';
+        }
+      }
     })
   }
 }

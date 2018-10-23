@@ -1,4 +1,4 @@
-import aungular from 'angular';
+import angular from 'angular';
 
 let projectsModule = angular.module('app.projects',[]);
 

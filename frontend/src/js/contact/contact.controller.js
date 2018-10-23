@@ -2,7 +2,7 @@ class ContactCtrl {
     constructor(Contact, Toastr,$timeout,$state) {
 		  'ngInject';
 		  
-		this.infoSelect = ["No puedo pagar","No puedo crear un proyecto","No me deja registrarme","Problemas con la contraseña"];
+		/*this.infoSelect = ["No puedo pagar","No puedo crear un proyecto","No me deja registrarme","Problemas con la contraseña"];
 		this.showSubject = false;
 		this.showButton = true;
 		 
@@ -40,23 +40,7 @@ class ContactCtrl {
 					);
 				}
 			});
-
-			var data = {
-				name: this.contact.inputName,
-				from: 'crowcode@gmail.com',
-				type: 'admin',
-				subject: this.contact.inputSubject,
-				to: 'daniortizgar@gmail.com',
-				text: this.contact.inputMessage
-			};
-			Contact.sendEmail(data).then(function(response){
-				/*if(response){
-					console.log("Mensaje enviado correctamente")
-				}else{
-					console.log("Error al enviar el mensaje")
-				}*/
-			});
-		}
+		}*/
     }
 }
 

@@ -11,4 +11,7 @@ contactModule.config(ContactConfig);
 import ContactCtrl from './contact.controller';
 contactModule.controller('ContactCtrl', ContactCtrl);
 
+import contactForm from './contactForm.component';
+contactModule.component('contactForm', contactForm);
+
 export default contactModule;

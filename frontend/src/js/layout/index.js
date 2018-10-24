@@ -1,7 +1,8 @@
 import angular from 'angular';
+import 'angular-sanitize';
 
 // Create the module where our functionality can attach to
-let layoutModule = angular.module('app.layout', []);
+let layoutModule = angular.module('app.layout', ['ngSanitize']);
 
 
 // Components

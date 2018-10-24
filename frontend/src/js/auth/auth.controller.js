@@ -33,7 +33,12 @@ class AuthCtrl {
 				User.attemptAuth(this.authType,this.authForm).then(
 					(res) => {
 						Toastr.showToastr('success','Successfully Logged In');
-						$state.go('app.home');
+						if(res.data.user.type == "admin"){
+							$state.go('app.adminpanel');
+						  }else {
+							location.reload();
+							$state.go('app.home');
+						  }	
 					},
 					(err) => {
 						this.disabledForm = false;

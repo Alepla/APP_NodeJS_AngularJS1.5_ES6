@@ -85,6 +85,23 @@ router.put('/pay', function(req, res, next) {
     });
 });
 
+router.put('/aids/link', function(req, res) {
+    Projects.update({_id: req.body.project},{$pull:{aids:{_id:req.body.aids._id}}}, 
+    function(err) {
+        if(err){
+            res.send({error:err});
+        }else{
+            Projects.update({_id: req.body.project},{$push:{aids:{"_id" : req.body.aids._id, "title" : req.body.aids.title, "percentage" : req.body.aids.percentage, "desc" : req.body.aids.desc, "state" : 2,link: req.body.link,"user" :req.body.user}}},function(err){
+                if(err){
+                    res.send({error:err});
+                }else{
+                    res.send(true);
+                }
+            })
+        }
+    });
+});
+
 var storage = multer.diskStorage({ //multers disk storage settings
     destination: function (req, file, cb) {
         cb(null, './public/uploads/');
@@ -125,5 +142,6 @@ router.post('/media/delete/:file', function(req, res) {
         res.json({media:mediaUpload});
    });
 });
+
 
 module.exports = router;

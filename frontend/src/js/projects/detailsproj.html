@@ -94,8 +94,13 @@
                   <h4 class="card-title">{{aids.title}}</h4>
                   <p class="card-text">{{aids.percentage}} %</p>
                   <p class="card-text">{{aids.desc}}.</p>
+                  <input type="text" ng-model="infoLink$index" ng-show="aids.state === 0"/>
+                  <label ng-show="aids.state === 1">Completed aid</label>
+                  <label ng-show="aids.state === 2">Checkin aid for the creator</label>
+                  <button ng-show="aids.state === 0" ng-click="$ctrl.saveLink(aids,infoLink$index)">Save</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+

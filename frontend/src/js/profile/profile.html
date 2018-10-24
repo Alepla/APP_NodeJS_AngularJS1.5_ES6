@@ -46,11 +46,27 @@
             
             <li class="nav-item">
               <a class="nav-link"
-                ng-click="$ctrl.subscribeProjects = true; $ctrl.personalProjects = false; $ctrl.invertedProjects = false;"
+                ng-click="$ctrl.myAids = false; $ctrl.participedAids = false; $ctrl.subscribeProjects = true; $ctrl.personalProjects = false; $ctrl.invertedProjects = false;"
                 style="cursor: pointer;">
                 Subscribed Projects
               </a>
             </li>
+
+            <li class="nav-item">
+              <a class="nav-link"
+                ng-click="$ctrl.myAids = true; $ctrl.participedAids = false; $ctrl.subscribeProjects = false; $ctrl.personalProjects = false; $ctrl.invertedProjects = false;"
+                style="cursor: pointer;">
+                My aids
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link"
+                ng-click=" $ctrl.myAids = false; $ctrl.participedAids = true; $ctrl.subscribeProjects = false; $ctrl.personalProjects = false; $ctrl.invertedProjects = false;"
+                style="cursor: pointer;">
+                Participed aids
+              </a>
+              </li>
           </ul>
         </div>
  
@@ -142,5 +158,47 @@
     </div>
   </div>
 </div>
+  
+  <span ng-show="$ctrl.proofAids.length < 1 && $ctrl.acceptAids.length < 1 && $ctrl.waitAids.length < 1 && $ctrl.myAids"><br /><br /><span style="margin-left:20%;"" class="alert alert-info">You haven't created any aid.</span></span>
+  <div ng-show="$ctrl.myAids" style="text-align:center;">
+    <div style="width: 30%; margin: 1%; display: inline-block; text-align: left; background-color: #f5f5f5; border: 1px solid #e3e3e3; border-radius: 4px; box-shadow: inset 0 1px 1px rgba(0,0,0,.05);" ng-repeat="aid in $ctrl.proofAids">
+      <h3 style="text-align: center;">{{aid.nameproject}}</h3>
+      <strong>Title:</strong> {{aid.title}}<br />
+      <strong>Percentage:</strong> {{aid.percentage}}<br />
+      <strong>Link:</strong> <br />{{aid.link}}<br />
+      <strong>Description:</strong> <br />{{aid.desc}}<br />
+      <div style="text-align:center;">
+        <button style="display: inline-block; margin: 2px;" class="btn btn-success" ng-click="$ctrl.acceptAid(aid)">Accept</button> 
+        <button style="display: inline-block; margin: 2px;" class="btn btn-danger" ng-click="$ctrl.cancelAid(aid)">Cancel</button>
+      </div>
+      </div>
+      <div style="width: 30%; margin: 1%; display: inline-block; text-align: left; background-color: #f5f5f5; border: 1px solid #e3e3e3; border-radius: 4px; box-shadow: inset 0 1px 1px rgba(0,0,0,.05);" ng-repeat="aid in $ctrl.acceptAids">
+        <h3 style="text-align: center;">{{aid.nameproject}}</h3>
+        <strong>Title:</strong> {{aid.title}}<br />
+        <strong>Percentage:</strong> {{aid.percentage}}<br />
+        <strong>Link:</strong><br />{{aid.link}}<br />
+        <strong>Description:</strong> <br />{{aid.desc}}
+        <h4 style="text-align: center;" class="text-success">Accepted aid</h4>
+      </div>
+      <div style="width: 30%; margin: 1%; display: inline-block; text-align: left; background-color: #f5f5f5; border: 1px solid #e3e3e3; border-radius: 4px; box-shadow: inset 0 1px 1px rgba(0,0,0,.05);" ng-repeat="aid in $ctrl.waitAids">
+        <h3 style="text-align: center;">{{aid.nameproject}}</h3>
+        <strong>Title:</strong> {{aid.title}}<br />
+        <strong>Percentage:</strong> {{aid.percentage}}<br />
+        <strong>Description:</strong> <br />{{aid.desc}}
+        <h4 style="text-align: center;" class="text-warning">Waiting for code</h4>
+      </div>
+    </div>
+  </div>
+  <span ng-show="$ctrl.aidsParticiped.length < 1 && $ctrl.participedAids"><br /><br /><span style="margin-left:20%;"" class="alert alert-info">You're not participated in any aid.</span></span>
+  <div ng-show="$ctrl.participedAids" style="text-align:center;">
+      <div style="width: 30%; margin: 1%; display: inline-block; text-align: left; background-color: #f5f5f5; border: 1px solid #e3e3e3; border-radius: 4px; -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.05); box-shadow: inset 0 1px 1px rgba(0,0,0,.05);" ng-repeat="aid in $ctrl.aidsParticiped">
+        <h3 style="text-align: center;">{{aid.nameproject}}</h3>
+        <strong>Title:</strong> {{aid.title}}<br />
+        <strong>Percentage:</strong> {{aid.percentage}}<br />
+        <strong>Link:</strong><br /> {{aid.link}}<br />
+        <strong>Description:</strong> <br />{{aid.desc}}
+        </div>
+      </div>
+  </div>
 
- </div>
+<div>

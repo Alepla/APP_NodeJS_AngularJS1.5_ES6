@@ -1,7 +1,8 @@
 class DetailsProjectCtrl {
-    constructor(project, $scope, Projects, User, Toastr, $state, $timeout) {
+    constructor(project, $scope, Projects, User, Toastr, $state, $timeout,Upload) {
         'ngInject';
         this.infoProj = project;
+        console.log(project)
         let leftDays = Math.round((new Date() - new Date(project.createdAt) ) / (1000*60*60*24));
         if(leftDays > 45 ){
             this.finProject = true;
@@ -84,9 +85,34 @@ class DetailsProjectCtrl {
                 'The project has been finished'
             );
         }
+        this.saveLink = (aids,link) => {
+            if(User.current){
+                let data = {link:link,project:project._id,user:User.current.id,aids:aids};
+                Projects.saveLink(data).then( (response) => {
+                    console.log(response.data)
+                    if (!response.data.error){
+                        Toastr.showToastr(
+                            'success',
+                            'You have participated in the project, wait for the response of the creator'
+                        );
+                        $timeout( function(){
+                            $state.go('app.home');
+                        }, 2000 );
+                    }else{
+                        console.log(response.data.error)
+                        Toastr.showToastr(
+                            'error',
+                            'Error to participated in the project'
+                        );
+                    }
+                })
+            }else{
+                $state.go('app.login');
+            }
+        }
 
         window.addEventListener('popstate', function() {
-        handler.close();
+            handler.close();
         });
     }
 }

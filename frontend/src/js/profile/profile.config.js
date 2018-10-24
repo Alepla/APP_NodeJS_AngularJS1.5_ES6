@@ -34,6 +34,12 @@ function ProfileConfig($stateProvider) {
           (projects) => projects,
           (err) => $state.go('app.home')
         )
+      },
+      aidspart: function(Profile, $state, $stateParams,User) {
+        return Profile.aidspart(User.current.id).then(
+          (projects) => projects,
+          (err) => $state.go('app.home')
+        )
       }
     }
 

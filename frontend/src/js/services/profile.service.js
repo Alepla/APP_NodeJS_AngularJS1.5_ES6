@@ -42,5 +42,27 @@ export default class Profile {
       data: info
     })
   }
+  acceptAid(info){
+    return this._$http({
+      url: this._AppConstants.api + '/profiles/aids/accept',
+      method: 'PUT',
+      data: info
+    })
+  }
+
+  cancelAid(info){
+    return this._$http({
+      url: this._AppConstants.api + '/profiles/aids/cancel',
+      method: 'PUT',
+      data: info
+    })
+  }
+
+  aidspart(id){
+    return this._$http({
+      url: this._AppConstants.api + '/profiles/aids/aidsparticiped/' + id,
+      method: 'GET'
+    }).then((res) => res.data.aids);
+  }
 
 }

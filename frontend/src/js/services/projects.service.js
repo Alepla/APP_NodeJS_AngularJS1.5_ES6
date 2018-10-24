@@ -53,6 +53,14 @@ export default class Projects {
             method: 'POST'
         })
     }
+
+    saveLink(data){
+        return this._$http({
+            url: this._AppConstants.api + '/projects/aids/link',
+            method: 'PUT',
+            data: data
+        })
+    }
   
   }
   

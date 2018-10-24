@@ -1,9 +1,13 @@
 class ProfileCtrl {
-  constructor(profile, User, projects, invested, $scope, $state,subscribe,Profile,Toastr,$timeout) {
+  constructor(profile, User, projects, invested,aidspart, $scope, $state,subscribe,Profile,Toastr,$timeout) {
     'ngInject';
-
+    
     this._$scope = $scope;
     this.profile = profile;
+    this.proofAids = [];
+    this.acceptAids = [];
+    this.waitAids = [];
+    this.aidsParticiped = [];
 
     projects.forEach((element,index) => {
       if(element.media[0]){
@@ -13,8 +17,21 @@ class ProfileCtrl {
               projects[index].video = element.media[0].split('-')[1];
       }
       projects[index].resdesc = projects[index].desc.substr(0,201) + "...";
+      element.aids.map((aid) => {
+        if(aid.state === 2){
+          aid.project = projects[index]._id;
+          aid.nameproject = projects[index].name;
+          this.proofAids.push(aid)
+        }else if(aid.state === 1){
+          aid.nameproject = projects[index].name;
+          this.acceptAids.push(aid)
+        }else{
+          aid.nameproject = projects[index].name;
+          this.waitAids.push(aid)
+        }
+      })
     });
-
+    
     invested.forEach((element,index) => {
       if(element.media[0]){
           if(element.media[0].split('-')[0] === 'image')
@@ -35,12 +52,24 @@ class ProfileCtrl {
       subscribe[index].resdesc = subscribe[index].desc.substr(0,201) + "...";
     });
 
+    aidspart.map((element,index)=>{
+      element.aids.map((aid)=>{
+        if(aid.state === 1 && aid.user === User.current.id){
+          aid.nameproject = aidspart[index].name;
+          this.aidsParticiped.push(aid)
+        }
+      })
+    })
+
     this.myProjects = projects;
     this.investedProj = invested;
     this.subscribeProj = subscribe;
 
     this.personalProjects = true;
     this.invertedProjects = false;
+    this.subscribeProjects = false;
+    this.myAids = false; 
+    this.participedAids = false;
 
     if (User.current) {
       this.isUser = (User.current.username === this.profile.username);
@@ -92,6 +121,47 @@ class ProfileCtrl {
             'error',
             'Error'
           );
+        }
+      });
+    }
+
+    this.acceptAid = (info) => {
+      Profile.acceptAid(info).then((response) => {
+        console.log(response.data);
+        if (!response.data.error){
+          Toastr.showToastr(
+              'success',
+              'You are accept the aid'
+          );
+          $timeout( function(){
+              $state.go('app.home');
+          }, 2000 );
+        }else{
+            console.log(response.data.error)
+            Toastr.showToastr(
+                'error',
+                'Error to accept the aid'
+            );
+        }
+      });
+    };
+    this.cancelAid = (info) => {
+      Profile.cancelAid(info).then((response) => {
+        console.log(response.data);
+        if (!response.data.error){
+          Toastr.showToastr(
+              'success',
+              'You are cancel the aid'
+          );
+          $timeout( function(){
+              $state.go('app.home');
+          }, 2000 );
+        }else{
+            console.log(response.data.error)
+            Toastr.showToastr(
+                'error',
+                'Error to cancel the aid'
+            );
         }
       });
     }

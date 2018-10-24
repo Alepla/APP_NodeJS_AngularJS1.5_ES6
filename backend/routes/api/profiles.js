@@ -51,11 +51,57 @@ router.get('/:id/projects', function(req, res, next) {
 });
 
 router.put('/projects/unsubscribe', function(req, res, next) {
-  console.log(req.body)
  Projects.update({"slug" : req.body.project},{$pull:{"subscribers":{user:req.body.user}}}).then(function(response){
     if(!response){ return res.sendStatus(401); }
     return res.json({res: true});
  }).catch(next);
 });
+
+router.put('/aids/accept', function(req, res, next) {
+  console.log(req.body)
+  Projects.update({_id: req.body.project},{$pull:{aids:{_id:req.body._id}}}, 
+    function(err) {
+        if(err){
+            res.send({error:err});
+        }else{
+            Projects.update({_id: req.body.project},{$push:{aids:{"_id" : req.body._id, "title" : req.body.title, "percentage" : req.body.percentage, "desc" : req.body.desc, "state" : 1,link: req.body.link,"user" :req.body.user}}},function(err){
+                if(err){
+                    res.send({error:err});
+                }else{
+                    res.send(true);
+                }
+            })
+        }
+    });
+});
+
+router.put('/aids/cancel', function(req, res, next) {
+  console.log(req.body)
+  Projects.update({_id: req.body.project},{$pull:{aids:{_id:req.body._id}}}, 
+    function(err) {
+        if(err){
+            res.send({error:err});
+        }else{
+            Projects.update({_id: req.body.project},{$push:{aids:{"_id" : req.body._id, "title" : req.body.title, "percentage" : req.body.percentage, "desc" : req.body.desc, "state" : 0,link: "","user" :""}}},function(err){
+                if(err){
+                    res.send({error:err});
+                }else{
+                    res.send(true);
+                }
+            })
+        }
+    });
+});
+
+router.get('/aids/aidsparticiped/:id', function(req, res, next) {
+  Projects.find({"aids.user":req.params.id,"aids.state":1}).then((aids) => {
+    if(aids){
+      res.json({aids:aids});
+    }else{
+      res.send(false);
+    }
+  })
+});
+
 
 module.exports = router;

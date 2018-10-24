@@ -84,6 +84,7 @@ class CreateprojCtrl {
         }
         
         this.upload = function (file) {
+            console.log(file)
             Upload.upload({
                 url: 'http://localhost:3000/api/projects/media/upload', //webAPI exposed to upload the file
                 data:{file:file} //pass file as data, should be user ng-model

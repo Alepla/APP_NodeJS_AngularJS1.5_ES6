@@ -73,7 +73,6 @@
 			<div style="width:46%; display:inline-block; margin: 1%; text-align: left">
 				<p style="text-align:left; font-weight: bold;">Preview Image</p>
 				<input required type="file" ngf-select ng-model="$ctrl.file" name="file" accept="image/*, video/*" ngf-max-size="20MB"/>
-					<img style="width:150px;" ng-show="!$ctrl.file" ngf-thumbnail="'/thumb.jpg'"/>
 					<img style="width:150px;" ng-show="$ctrl.file" ngf-thumbnail="$ctrl.file" />
 					<video ng-show="$ctrl.file" ngf-thumbnail="$ctrl.file" width="150px" controls></video><br />
 					<i ng-show="$ctrl.createprojForm.file.$error.required && ($ctrl.createprojForm.file.$dirty || $ctrl.createprojForm.file.$touched)">*required</i><br>

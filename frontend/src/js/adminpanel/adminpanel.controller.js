@@ -5,7 +5,9 @@ class AdminpanelCtrl {
         this.infoProject = projects;
         this.infoUsers = users;
 
-        if(User.current.type != "admin"){
+        if(!User.current){
+            $state.go('app.home');
+        }else if(User.current.type != "admin" ){
             $state.go('app.home');
         }
 

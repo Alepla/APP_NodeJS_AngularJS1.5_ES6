@@ -33,6 +33,20 @@ router.post('/', function(req, res, next) {
     }
 });
 
+router.get('/cleardata',function(req,res){
+    if(mediaUpload.length > 0){
+        mediaUpload.map((media) => {
+            fs.unlink('./public/uploads/'+media.toString().split('-')[1],function(err){
+                console.log(err)
+            });
+        });
+        mediaUpload = [];
+        res.send(true);
+    }else{
+        res.send(true);
+    }
+})
+
 router.put('/', function(req, res, next) {
     console.log(req.body);
     var myQuery = { _id: req.body.oldID };

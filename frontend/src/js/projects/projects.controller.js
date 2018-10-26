@@ -17,7 +17,7 @@ class ProjectsCtrl {
                 }
                 projects[index].resdesc = projects[index].desc.substr(0,201) + "...";
                 leftDays = Math.round((new Date() - new Date(element.createdAt) ) / (1000*60*60*24));
-                if(leftDays > 45 ){
+                if(leftDays >= 45 ){
                     projects[index].finProject = true;
                 }else{
                     projects[index].totalDays = 45 - leftDays;

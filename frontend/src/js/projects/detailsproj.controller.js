@@ -4,7 +4,7 @@ class DetailsProjectCtrl {
         this.infoProj = project;
         console.log(project)
         let leftDays = Math.round((new Date() - new Date(project.createdAt) ) / (1000*60*60*24));
-        if(leftDays > 45 ){
+        if(leftDays >= 45 ){
             this.finProject = true;
             this.totalDays = false;
         }else{
@@ -87,25 +87,32 @@ class DetailsProjectCtrl {
         }
         this.saveLink = (aids,link) => {
             if(User.current){
-                let data = {link:link,project:project._id,user:User.current.id,aids:aids};
-                Projects.saveLink(data).then( (response) => {
-                    console.log(response.data)
-                    if (!response.data.error){
-                        Toastr.showToastr(
-                            'success',
-                            'You have participated in the project, wait for the response of the creator'
-                        );
-                        $timeout( function(){
-                            $state.go('app.home');
-                        }, 2000 );
-                    }else{
-                        console.log(response.data.error)
-                        Toastr.showToastr(
-                            'error',
-                            'Error to participated in the project'
-                        );
-                    }
-                })
+                if(aids && link){
+                    let data = {link:link,project:project._id,user:User.current.id,aids:aids};
+                    Projects.saveLink(data).then( (response) => {
+                        console.log(response.data)
+                        if (!response.data.error){
+                            Toastr.showToastr(
+                                'success',
+                                'You have participated in the project, wait for the response of the creator'
+                            );
+                            $timeout( function(){
+                                $state.go('app.home');
+                            }, 2000 );
+                        }else{
+                            console.log(response.data.error)
+                            Toastr.showToastr(
+                                'error',
+                                'Error to participated in the project'
+                            );
+                        }
+                    })
+                }else{
+                    Toastr.showToastr(
+                        'error',
+                        'Add the git link'
+                    );
+                }
             }else{
                 $state.go('app.login');
             }

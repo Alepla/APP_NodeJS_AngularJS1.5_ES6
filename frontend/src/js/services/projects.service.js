@@ -24,6 +24,13 @@ export default class Projects {
         })
     }
 
+    clearProject(){
+        return this._$http({
+            url: `${this._AppConstants.api}/projects/cleardata`,
+            method: 'GET'
+        })
+    }
+
     updateProject(project){
         return this._$http({
             url: `${this._AppConstants.api}/projects`,

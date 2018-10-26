@@ -1,6 +1,9 @@
 class CreateprojCtrl {
     constructor(Projects,Toastr,$timeout,$state,User,$uibModal,$rootScope,Upload) {
         'ngInject';
+        if(!User.current){
+            $state.go('app.home');
+        }
         let _this = this;
         $rootScope.rewards = [];
         this.infoAids = [];
@@ -42,7 +45,6 @@ class CreateprojCtrl {
             }else{
                 this.disabledForm = true;
                 if(this.infoAids.length < 1) this.infoAids = false;
-                console.log(this.infoAids);
                 this.slug = this.createproj.inputNameproj.toLowerCase();
                 this.slug = this.slug.replace(" ","-");
                 var data = {
@@ -84,7 +86,6 @@ class CreateprojCtrl {
         }
         
         this.upload = function (file) {
-            console.log(file)
             Upload.upload({
                 url: 'http://localhost:3000/api/projects/media/upload', //webAPI exposed to upload the file
                 data:{file:file} //pass file as data, should be user ng-model

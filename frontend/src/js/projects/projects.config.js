@@ -21,7 +21,12 @@ function ProjectsConfig($stateProvider) {
       controller: 'CreateprojCtrl',
       controllerAs: '$ctrl',
       templateUrl: 'projects/createproj.html',
-      title: 'Createproj'
+      title: 'Createproj',
+      resolve: {
+        clearProj: (Projects) => {
+          Projects.clearProject()
+        }
+      }
     })
     .state('app.updateproj', {
       url: '/updateproj/:slug',

@@ -9,11 +9,18 @@ export default class Projects {
   
     }
   
-    getProjects() {
+    /*getProjects() {
         return this._$http({
             url: `${this._AppConstants.api}/projects`,
             method: 'GET'
         }).then((res) => res.data.projects);
+    }*/
+
+    getProjects() {
+        return this._$http({
+            url: `${this._AppConstants.api}/graphql/graphql?query={allProjects{ slug name goal sector desc investedMoney media createdAt type}}`,
+            method: 'GET'
+        }).then((res) => res.data.data.allProjects);
     }
 
     setProjects(project){

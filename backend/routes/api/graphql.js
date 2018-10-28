@@ -8,8 +8,8 @@ var Projects = mongoose.model('Projects');
 import { graphiqlExpress, graphqlExpress } from 'apollo-server-express';
 import { makeExecutableSchema } from 'graphql-tools';
 
-import typeDefs from '../../src/schemas/schemaHome';
-import resolvers from '../../src/resolvers/resolversHome';
+import typeDefs from '../../src/schemas/schema';
+import resolvers from '../../src/resolvers/resolvers';
 
 const schema = makeExecutableSchema({
   typeDefs,

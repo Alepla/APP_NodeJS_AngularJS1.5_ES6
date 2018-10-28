@@ -19,8 +19,8 @@ export default class Sectors {
   //GRAPHQL
   getSectors() {
     return this._$http({
-      url: this._AppConstants.api + '/graphql/graphql?query={allProjects{ sector }}',
+      url: this._AppConstants.api + '/graphql/graphql?query={allSectors{ sector }}',
       method: 'GET',
-    }).then((x) => x.data.data.allProjects);
+    }).then((x) => x.data.data.allSectors);
   }
 } 
